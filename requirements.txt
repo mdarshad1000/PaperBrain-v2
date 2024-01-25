@@ -7,3 +7,4 @@ tqdm==4.66.1
 uvicorn==0.21.1
 llama-index==0.9.26
 arxiv==2.1.0
+pypdf==3.15.1
