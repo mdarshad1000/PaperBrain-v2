@@ -135,7 +135,7 @@ def embed_and_upsert(papers, index_name, model, batch_size=100):
             index.upsert(pc_data)
 
 
-def optional_filtering(index, vector, categories = None, year = None):
+def optional_filtering(index, vector, k, categories = None, year = None):
     """
     Checks if filtering is required based on the user input. If user provides
     `categories` or `year` preferences then filtering is done. Else simply the
@@ -155,7 +155,7 @@ def optional_filtering(index, vector, categories = None, year = None):
         year = [int(y) for y in year]
 
         query_response = index.query(
-            top_k=5,
+            top_k=k,
             include_values=True,
             include_metadata=True,
             vector=vector,
@@ -173,7 +173,7 @@ def optional_filtering(index, vector, categories = None, year = None):
         year = [int(y) for y in year]
 
         query_response = index.query(
-            top_k=5,
+            top_k=k,
             include_values=True,
             include_metadata=True,
             vector=vector,
@@ -187,7 +187,7 @@ def optional_filtering(index, vector, categories = None, year = None):
         categories = categories.split()
 
         query_response = index.query(
-            top_k=5,
+            top_k=k,
             include_values=True,
             include_metadata=True,
             vector=vector,
@@ -199,7 +199,7 @@ def optional_filtering(index, vector, categories = None, year = None):
         print("entered last loop")
 
         query_response = index.query(
-            top_k=5,
+            top_k=k,
             include_values=True,
             include_metadata=True,
             vector=vector,

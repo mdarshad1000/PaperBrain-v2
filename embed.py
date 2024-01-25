@@ -1,10 +1,9 @@
 from helpers import load_data, embed_and_upsert
 
-
 # define constants
 JSON_FILE_PATH = "arxiv-metadata-oai-snapshot.json"
 # CATEGORIES = ["cs.cv", "cs.lg", "cs.cl", "cs.ai", "cs.ne", "cs.ro"]
-CATEGORIES = ["cs.cv"] # cs.hc, cs.ai, econ.math 
+CATEGORIES = ["cs.cv"] # cs.hc, cs.ai, econ.math, cs.cv
 START_YEAR = 2007
 EMBED_MODEL = "text-embedding-ada-002"
 PRICE_PER_1K = 0.0004 
