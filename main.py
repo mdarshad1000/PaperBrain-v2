@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from helpers import pinecone_connect, optional_filtering
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from openai import OpenAI
 import requests
@@ -16,9 +17,18 @@ load_dotenv()
 # initialise fastapi app 
 app = FastAPI()
 
+
+# Enable CORS for all origins 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # This allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # initialise openai Client
 client = OpenAI()
-
 
 # connect to pinecone and initialized serverless
 pc, index = pinecone_connect()
