@@ -32,7 +32,7 @@ client = OpenAI()
 
 # connect to pinecone and initialized serverless
 pc, index = pinecone_connect()
-    
+
 
 @app.get("/")
 async def home():
@@ -50,14 +50,14 @@ async def search(query: str, categories: Optional[str] = None, year: Optional[st
     
     papers_list = [
         {
-            'id': {query_response['matches'][i]['id']},
-            'title': {query_response['matches'][i]['metadata']['title']},
-            'abstract': {query_response['matches'][i]['metadata']['abstract']},
+            'id': query_response['matches'][i]['id'],
+            'title': query_response['matches'][i]['metadata']['title'],
+            'summary': query_response['matches'][i]['metadata']['abstract'],
             'authors': {query_response['matches'][i]['metadata']['authors']},
-            'pdf_link': f"https://arxiv.org/pdf/{query_response['matches'][i]['id']}.pdf",
+            'pdf_url': f"https://arxiv.org/pdf/{query_response['matches'][i]['id']}.pdf",
             'date': f"{query_response['matches'][i]['metadata']['month']}, {int(query_response['matches'][i]['metadata']['year'])}",
-            'categories': ', '.join(query_response['matches'][i]['metadata']['categories']),
-            'similarity_score': {round(query_response['matches'][i]['score']*100)},
+            'categories': query_response['matches'][i]['metadata']['categories'],
+            'similarity_score': round(query_response['matches'][i]['score']*100),
         }
         for i in range(len(query_response['matches']))
     ]
@@ -115,7 +115,7 @@ async def ask(question: str):
             "title": paper.title,
             "authors": paper.authors,
             "pdfurl": paper.pdf_url,
-            "abstract": paper.summary,
+            "abstract": paper.summary[0],
         }
         for paper in papers
     ]
@@ -123,4 +123,4 @@ async def ask(question: str):
     return {
             "answer": answer,
             "citation": paper_info
-            }
+        }
