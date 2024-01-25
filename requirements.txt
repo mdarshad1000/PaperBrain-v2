@@ -5,3 +5,4 @@ python-dotenv==1.0.1
 tiktoken==0.5.2
 tqdm==4.66.1
 uvicorn==0.21.1
+numpy==1.22.4
