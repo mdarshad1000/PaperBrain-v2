@@ -115,7 +115,7 @@ async def ask(question: str):
             "title": paper.title,
             "authors": paper.authors,
             "pdfurl": paper.pdf_url,
-            "abstract": paper.summary[0],
+            "abstract": paper.summary,
         }
         for paper in papers
     ]
