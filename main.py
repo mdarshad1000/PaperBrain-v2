@@ -38,25 +38,9 @@ def get_pinecone_index():
 def get_openai_client():
     return OpenAI()
 
-
-# Pydantic model for search request
-class SearchRequest(BaseModel):
-    query: str
-    categories: Optional[str] = None
-    year: Optional[str] = None
-
-
 # Pydantic model for ask-arxiv request
 class AskArxivRequest(BaseModel):
     question: str
-
-
-# Pydantic model for paper info
-class PaperInfo(BaseModel):
-    title: str
-    authors: str
-    pdfurl: str
-    abstract: str
 
 
 @app.get("/")
@@ -65,14 +49,14 @@ async def home():
 
 
 @app.post("/semantic-search/")
-async def search(request: SearchRequest, index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
+async def search(query: str, categories: Optional[str], year: Optional[str], index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
 
     # calculate query embeddings
-    response = client.embeddings.create(input=request.query, model=os.getenv("EMBED_MODEL"))
+    response = client.embeddings.create(input=query, model=os.getenv("EMBED_MODEL"))
     query_vector = response.data[0].embedding
 
     # perform semantic search over PineconeDB
-    query_response = pinecone_retrieval(index=index, vector=query_vector, k=20, categories=request.categories, year=request.year)
+    query_response = pinecone_retrieval(index=index, vector=query_vector, k=20, categories=categories, year=year)
     
     papers_list = [create_paper_dict(match) for match in query_response['matches']]
         
