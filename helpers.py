@@ -34,7 +34,7 @@ def pinecone_connect():
     return pc, index
 
 
-def load_data(file_path, categories, start_year):
+def load_data(file_path, categories, start_year, end_year):
     """
     Returns a generator over the papers contained in `file_path`, belonging to
     the categories in `categories`, and published in or after `start_year`.
@@ -51,7 +51,7 @@ def load_data(file_path, categories, start_year):
     papers = (Paper(json.loads(line)) for line in json_file)
     papers = (paper for paper in papers
               if paper.has_category(categories) and paper.has_valid_id)
-    return (paper for paper in papers if paper.year >= start_year)
+    return (paper for paper in papers if paper.year >= start_year and paper.year < end_year)
 
 
 def pinecone_embedding_count(index_name):
@@ -111,7 +111,7 @@ def get_embeddings(texts, model="text-embedding-ada-002"):
     response = openai.Embedding.create(input=texts, model=model)
     return response["data"]
 
-def embed_and_upsert(papers, index_name, model, batch_size=100):
+def embed_and_upsert(papers, index_name, model, batch_size=90):
     """
     Embeds the embedding text of each paper in `papers` using the embedding
     model specified in `model`. The embeddings are then upserted to the Pinecone
@@ -135,12 +135,12 @@ def embed_and_upsert(papers, index_name, model, batch_size=100):
             index.upsert(pc_data)
 
 
-def optional_filtering(index, vector, k, categories = None, year = None):
+def pinecone_retrieval(index, vector, k, categories=None, year=None):
     """
     Checks if filtering is required based on the user input. If user provides
     `categories` or `year` preferences then filtering is done. Else simply the
     results are returned from Pinecone without any filtering.
-    💡This function is made as there isn't any built-in feature in the python client
+    💡 This function is made as there isn't any built-in feature in the python client
 
     Args:
         query_vector: Embedding of the query
@@ -148,60 +148,51 @@ def optional_filtering(index, vector, k, categories = None, year = None):
         categories: string of categories selected by the user
         year: string of year selected by the user
     """
-    if categories and year is not None:
-        print("entered first loop")
-        categories = categories.split()
-        year = year.split()
-        year = [int(y) for y in year]
 
-        query_response = index.query(
-            top_k=k,
-            include_values=True,
-            include_metadata=True,
-            vector=vector,
-            filter={
-                    'categories': {'$in': categories},
-                    'year': {'$in': year},
-                }
-            )
-        return query_response
-  
-    elif year is not None:
-        print("entered second loop")
+    filter_params = {}
 
-        year = year.split()
-        year = [int(y) for y in year]
+    if categories:
+        filter_params['categories'] = {'$in': categories.split()}
 
-        query_response = index.query(
-            top_k=k,
-            include_values=True,
-            include_metadata=True,
-            vector=vector,
-            filter={'year': {'$in': year}}
-            )
-        return query_response
-    
-    elif categories is not None:
-        print("entered third loop")
+    if year:
+        filter_params['year'] = {'$in': [int(y) for y in year.split()]}
 
-        categories = categories.split()
+    query_response = index.query(
+        top_k=k,
+        include_values=True,
+        include_metadata=True,
+        vector=vector,
+        filter=filter_params if filter_params else None
+    )
 
-        query_response = index.query(
-            top_k=k,
-            include_values=True,
-            include_metadata=True,
-            vector=vector,
-            filter={'categories': {'$in': categories}}
-            )
-        return query_response
+    return query_response
 
-    else:
-        print("entered last loop")
 
-        query_response = index.query(
-            top_k=k,
-            include_values=True,
-            include_metadata=True,
-            vector=vector,
-        )
-        return query_response
+def create_paper_dict(match):
+    """
+    Creates a dictionary representing a paper based on the provided match.
+
+    Args:
+        match: A dictionary representing a match from the query response.
+
+    Returns:
+        A dictionary containing the following keys:
+        - 'id': The ID of the paper
+        - 'title': The title of the paper
+        - 'summary': The abstract of the paper
+        - 'authors': A set of authors of the paper
+        - 'pdf_url': The URL to the PDF of the paper
+        - 'date': The publication date of the paper
+        - 'categories': The categories of the paper
+        - 'similarity_score': The similarity score of the paper match, rounded to the nearest integer.
+    """
+    return {
+        'id': match['id'],
+        'title': match['metadata']['title'],
+        'summary': match['metadata']['abstract'],
+        'authors': {match['metadata']['authors']},
+        'pdf_url': f"https://arxiv.org/pdf/{match['id']}.pdf",
+        'date': f"{match['metadata']['month']}, {int(match['metadata']['year'])}",
+        'categories': match['metadata']['categories'],
+        'similarity_score': round(match['score']*100),
+    }
