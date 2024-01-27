@@ -1,9 +1,11 @@
-from fastapi import FastAPI
-from dotenv import load_dotenv
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from helpers import pinecone_connect, optional_filtering
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from helpers import pinecone_connect, pinecone_retrieval, create_paper_dict
+from rag import rag_pipeline
+from dotenv import load_dotenv
 from typing import Optional
+from pydantic import BaseModel
+from pathlib import Path
 from openai import OpenAI
 import requests
 import arxiv
@@ -27,11 +29,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# initialise openai Client
-client = OpenAI()
+# Dependency for Pinecone connection
+def get_pinecone_index():
+    pc, index = pinecone_connect()
+    return index
 
-# connect to pinecone and initialized serverless
-pc, index = pinecone_connect()
+# Dependency for OpenAI client
+def get_openai_client():
+    return OpenAI()
+
+
+# Pydantic model for search request
+class SearchRequest(BaseModel):
+    query: str
+    categories: Optional[str] = None
+    year: Optional[str] = None
+
+
+# Pydantic model for ask-arxiv request
+class AskArxivRequest(BaseModel):
+    question: str
+
+
+# Pydantic model for paper info
+class PaperInfo(BaseModel):
+    title: str
+    authors: str
+    pdfurl: str
+    abstract: str
 
 
 @app.get("/")
@@ -40,47 +65,36 @@ async def home():
 
 
 @app.post("/semantic-search/")
-async def search(query: str, categories: Optional[str] = None, year: Optional[str] = None):
+async def search(request: SearchRequest, index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
 
     # calculate query embeddings
-    response = client.embeddings.create(input=query, model=os.getenv("EMBED_MODEL"))
+    response = client.embeddings.create(input=request.query, model=os.getenv("EMBED_MODEL"))
     query_vector = response.data[0].embedding
 
-    query_response = optional_filtering(index=index, vector=query_vector, k=20, categories=categories, year=year)
+    # perform semantic search over PineconeDB
+    query_response = pinecone_retrieval(index=index, vector=query_vector, k=20, categories=request.categories, year=request.year)
     
-    papers_list = [
-        {
-            'id': query_response['matches'][i]['id'],
-            'title': query_response['matches'][i]['metadata']['title'],
-            'summary': query_response['matches'][i]['metadata']['abstract'],
-            'authors': {query_response['matches'][i]['metadata']['authors']},
-            'pdf_url': f"https://arxiv.org/pdf/{query_response['matches'][i]['id']}.pdf",
-            'date': f"{query_response['matches'][i]['metadata']['month']}, {int(query_response['matches'][i]['metadata']['year'])}",
-            'categories': query_response['matches'][i]['metadata']['categories'],
-            'similarity_score': round(query_response['matches'][i]['score']*100),
-        }
-        for i in range(len(query_response['matches']))
-    ]
-
+    papers_list = [create_paper_dict(match) for match in query_response['matches']]
+        
     return papers_list
 
 
 @app.post("/ask-arxiv/")
-async def ask(question: str):
+async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
 
     _, index = pinecone_connect()
     # calculate query embeddings
-    response = client.embeddings.create(input=question, model=os.getenv("EMBED_MODEL"))
+    response = client.embeddings.create(input=request.question, model=os.getenv("EMBED_MODEL"))
     query_vector = response.data[0].embedding
 
-    top_5_papers = optional_filtering(index=index, vector=query_vector, k=3)
+    top_5_papers = pinecone_retrieval(index=index, vector=query_vector, k=3)
 
     # unique ID for a new question
     u_id = str(uuid.uuid4()) 
 
     # Create a Directory for each question to download the top_5 papers
-    if not os.path.exists('ask-arxiv/{u_id}'):
-        os.makedirs(f'ask-arxiv/{u_id}')
+    dir_path = Path(f'ask-arxiv/{u_id}')
+    dir_path.mkdir(parents=True, exist_ok=True)
 
     # Download the top 5 papers
     for i in range(len(top_5_papers['matches'])):
@@ -90,24 +104,28 @@ async def ask(question: str):
 
         # Check if the request was successful and download paper
         if response.status_code == 200:
-            with open(f'ask-arxiv/{u_id}/{ID}.pdf', 'wb') as f:
-                f.write(response.content)
+            with open(dir_path / f'{ID}.pdf', 'wb') as f:
+                f.write(response.content)  
+
+    index, service_context = rag_pipeline(u_id=u_id)
+
+    query_engine = index.as_query_engine(
+        response_mode="tree_summarize", 
+        verbose=True, 
+        similarity_top_k=5, 
+        service_context=service_context
+        )
     
-
-    documents = SimpleDirectoryReader(f"ask-arxiv/{u_id}", recursive=True).load_data()
-    index = VectorStoreIndex.from_documents(documents)
-
-    query_engine = index.as_query_engine(response_mode="tree_summarize", verbose=True, similarity_top_k=5)
-    response = query_engine.query(question)
+    response = query_engine.query(request.question)
 
     # Model Response
     answer = response.response
 
-    # Retrieve the Paper Identifier from the Response object
+    # Retrieve the Paper ID from the Response object
     arxiv_id = [response.source_nodes[i].node.metadata["file_name"].rstrip('.pdf') for i in range(len(response.source_nodes))]
     arxiv_id = list(set(arxiv_id))
 
-    # Search arxiv using ID for the required info and preapre citation
+    # Search arxiv using ID for the citation info
     search = arxiv.Search(id_list=arxiv_id)
     papers = list(search.results())
     paper_info = [
@@ -123,4 +141,4 @@ async def ask(question: str):
     return {
             "answer": answer,
             "citation": paper_info
-        }
+           }
