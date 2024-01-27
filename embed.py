@@ -4,8 +4,8 @@ from helpers import load_data, embed_and_upsert
 JSON_FILE_PATH = "arxiv-metadata-oai-snapshot.json"
 # CATEGORIES = ["", "cs.lg", "", "", "", ""]
 CATEGORIES = ["cs.lg"] # cs.hc, cs.ai, cs.cl, cs.ne, cs.cv(99%), econ.math, cs.ro, cs.lg(30%),
-START_YEAR = 2019
-END_YEAR = 2020
+START_YEAR = 2020
+END_YEAR = 2021
 EMBED_MODEL = "text-embedding-ada-002"
 PRICE_PER_1K = 0.0004
 PINECONE_INDEX_NAME='paperbrain-search'
@@ -21,8 +21,8 @@ print(len(papers))
 # 2013-2017=9207
 # 2017-2018=5250
 # 2018-2019=10495
-# 2019-2020=
-# 2020-2021
+# 2019-2020=19286
+# 2020-2021=25883
 # 2021-2022
 # 2022-2023
 # 2023-2024

@@ -12,6 +12,13 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def pinecone_connect():
+    """
+    Connects to the Pinecone service, creates an index if it
+    doesn't exist, and returns the Pinecone client and index object.
+
+    Returns:
+        A tuple containing the Pinecone client and index object.
+    """
     index_name = os.getenv("PINECONE_INDEX_NAME")
 
     pc = Pinecone(
