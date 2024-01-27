@@ -49,7 +49,7 @@ async def home():
 
 
 @app.post("/semantic-search/")
-async def search(query: str, categories: Optional[str], year: Optional[str], index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
+async def search(query: str, categories: Optional[str]=None, year: Optional[str]=None, index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
 
     # calculate query embeddings
     response = client.embeddings.create(input=query, model=os.getenv("EMBED_MODEL"))
