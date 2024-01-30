@@ -8,3 +8,6 @@ uvicorn==0.21.1
 llama-index==0.9.26
 arxiv==2.1.0
 pypdf==3.15.1
+beautifulsoup4==4.12.3
+redis==4.5.5
+psycopg2==2.9.3
