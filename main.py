@@ -1,23 +1,30 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from helpers import pinecone_connect, pinecone_retrieval, create_paper_dict
-from rag import rag_pipeline
-from dotenv import load_dotenv
+from rag import rag_pipeline, SYSTEM_PROMPT
+from daily_digest import fetch_papers, rank_papers
+from db_handling import Actions
 from typing import Optional
 from pydantic import BaseModel
+from dotenv import load_dotenv
 from pathlib import Path
 from openai import OpenAI
 import requests
 import arxiv
+import json
 import uuid
+import redis
 import os
-
-
-# Load environment variables from .env file
-load_dotenv()
 
 # initialise fastapi app 
 app = FastAPI()
+
+# initialise redis client
+redis_client = redis.Redis(
+  host=os.getenv('REDIS_HOST'),
+  port=os.getenv('REDIS_PORT'),
+  password=os.getenv('REDIS_PASSWORD')
+)
 
 
 # Enable CORS for all origins 
@@ -52,26 +59,26 @@ async def home():
 async def search(query: str, categories: Optional[str]=None, year: Optional[str]=None, index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
 
     # calculate query embeddings
-    response = client.embeddings.create(input=query, model=os.getenv("EMBED_MODEL"))
+    response = client.embeddings.create(input=query, model='text-embedding-ada-002')
     query_vector = response.data[0].embedding
 
     # perform semantic search over PineconeDB
     query_response = pinecone_retrieval(index=index, vector=query_vector, k=20, categories=categories, year=year)
     
     papers_list = [create_paper_dict(match) for match in query_response['matches']]
-        
+    redis_client.flushdb()
     return papers_list
 
 
 @app.post("/ask-arxiv/")
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
 
-    _, index = pinecone_connect()
+    index = get_pinecone_index()
     # calculate query embeddings
-    response = client.embeddings.create(input=request.question, model=os.getenv("EMBED_MODEL"))
+    response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
     query_vector = response.data[0].embedding
 
-    top_5_papers = pinecone_retrieval(index=index, vector=query_vector, k=3)
+    top_5_papers = pinecone_retrieval(index=index, vector=query_vector, k=5)
 
     # unique ID for a new question
     u_id = str(uuid.uuid4()) 
@@ -91,13 +98,13 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
             with open(dir_path / f'{ID}.pdf', 'wb') as f:
                 f.write(response.content)  
 
-    index, service_context = rag_pipeline(u_id=u_id)
+    index, service_context = rag_pipeline(u_id=u_id, system_prompt=SYSTEM_PROMPT)
 
     query_engine = index.as_query_engine(
-        response_mode="tree_summarize", 
-        verbose=True, 
-        similarity_top_k=5, 
-        service_context=service_context
+            response_mode="tree_summarize", 
+            verbose=True, 
+            similarity_top_k=5, 
+            service_context=service_context
         )
     
     response = query_engine.query(request.question)
@@ -124,5 +131,35 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
 
     return {
             "answer": answer,
-            "citation": paper_info
+            "citation": paper_info,
            }
+
+
+@app.post("/daily-digest/")
+async def daily_digest(user_id: str, date: str, client: OpenAI = Depends(get_openai_client)):
+        
+        cache_key = f'{user_id}:{date}'
+
+        cached_result = redis_client.get(cache_key)
+
+        if cached_result:
+            print("this loop getting executed")
+            # If the result is in the cache, return it directly
+            return json.loads(cached_result)
+        else:
+            print("computation is getting eexec")
+            database = Actions()
+
+            categories, interest = database.get_user_preference(user_id=user_id)
+
+            for category in categories:
+                papers_list, date = fetch_papers(category=category)
+
+            answer = rank_papers(interest=interest, papers_list=papers_list, client=client)
+            
+            response_json = json.loads(answer)
+
+            redis_client.setex(cache_key, 24*3600, json.dumps(response_json))
+            
+            return response_json
+        
