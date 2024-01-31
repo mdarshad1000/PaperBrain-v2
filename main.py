@@ -16,6 +16,9 @@ import uuid
 import redis
 import os
 
+
+load_dotenv()
+
 # initialise fastapi app 
 app = FastAPI()
 
@@ -78,7 +81,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
     response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
     query_vector = response.data[0].embedding
 
-    top_5_papers = pinecone_retrieval(index=index, vector=query_vector, k=5)
+    top_3_papers = pinecone_retrieval(index=index, vector=query_vector, k=3)
 
     # unique ID for a new question
     u_id = str(uuid.uuid4()) 
@@ -88,8 +91,8 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
     dir_path.mkdir(parents=True, exist_ok=True)
 
     # Download the top 5 papers
-    for i in range(len(top_5_papers['matches'])):
-        ID = top_5_papers['matches'][i]['id']
+    for i in range(len(top_3_papers['matches'])):
+        ID = top_3_papers['matches'][i]['id']
         url = f"https://arxiv.org/pdf/{ID}.pdf"
         response = requests.get(url)
 
@@ -143,19 +146,20 @@ async def daily_digest(user_id: str, date: str, client: OpenAI = Depends(get_ope
         cached_result = redis_client.get(cache_key)
 
         if cached_result:
-            print("this loop getting executed")
             # If the result is in the cache, return it directly
             return json.loads(cached_result)
         else:
-            print("computation is getting eexec")
             database = Actions()
 
             categories, interest = database.get_user_preference(user_id=user_id)
+            
+            papers_lists = []
 
             for category in categories:
-                papers_list, date = fetch_papers(category=category)
-
-            answer = rank_papers(interest=interest, papers_list=papers_list, client=client)
+                papers_data = fetch_papers(category=category)
+                papers_lists.append(papers_data)
+            
+            answer = rank_papers(interest=interest, papers_list=papers_lists, client=client)
             
             response_json = json.loads(answer)
 

@@ -1,8 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
+import json
 
-papers_data = []
+
 def fetch_papers(category: list):
+    papers_data = []
+
     # Define the URL
     url = f"https://arxiv.org/list/{category}/new"
     response = requests.get(url)
@@ -35,7 +39,7 @@ def fetch_papers(category: list):
 
 def rank_papers(interest: str, papers_list: list, client):
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
+        model="gpt-4-1106-preview",
         response_format={"type":"json_object"},
         messages=[
             {
@@ -46,19 +50,27 @@ def rank_papers(interest: str, papers_list: list, client):
             },
             {   
                 "role": "user",
-                "content": f"""You are an expert in ranking research papers based on relevance. \
-                            You will receive an input from the user which will have their Research Interests,\
-                            along with titles, id, abstract of articles/research paper for that query.\
-                            Once you have all the information, return the ID, Title, Abstract, Authors of the \
-                            5 most relevant paper
+                "content": """
+                            You have been asked to read a list of a few arxiv papers, each with title, authors and abstract.
+                            Based on my specific research interests, relevancy score out of 10 for each paper, based on my specific research interest, with a higher score indicating greater relevance. A relevance score more than 7 will need person's attention for details.
+                            Additionally, please generate 1-2 sentence summary for each paper explaining why it's relevant to my research interests.
+                            At least return 3 papers and at max 10.
+                            Once you have all the information, return the 
+                            "ID"
+                            "Title"
+                            "Abstract"
+                            "Authors": 
+                            "Relevancy score": "an integer score out of 10",
+                            "Reasons for match": "1-2 sentence short reasonings" along wth 
+                            
                             
                             INTERESTS:
                             {interest}                        
                                 
                             GIVEN PAPERS:
-                            {papers_list}"""
-            },
-            
+                            {papers_list}""".format(interest=interest, papers_list=papers_list)
+            },  
+
         ],
 
     )
