@@ -1,40 +1,39 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
-import json
+import json  # Import the json module
 
-
-def fetch_papers(category: list):
+def fetch_papers(categories: list):
     papers_data = []
 
-    # Define the URL
-    url = f"https://arxiv.org/list/{category}/new"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, "html.parser")
-    h2 = soup.find_all("h2")
-    date = ' '.join(soup.find("h3").text.strip().split()[-4:])
-    for item in h2:
-        
-        papers = item.find_next_sibling("dl")
+    for category in categories:
+        # Define the URL for each category
+        url = f"https://arxiv.org/list/{category}/new"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "html.parser")
+        h2 = soup.find_all("h2")
+        for item in h2:
+            papers = item.find_next_sibling("dl")
 
-        for p_id, p_info in zip(papers.find_all("dt"), papers.find_all("dd")):
+            for p_id, p_info in zip(papers.find_all("dt"), papers.find_all("dd")):
+                paper_id = p_id.find("span", {"class": "list-identifier"}).text.strip().split(":")[1].split()[0]
+                title = p_info.find("div", {"class": "list-title mathjax"}).text.strip()
+                authors = p_info.find("div", {"class": "list-authors"}).text.strip()
+                subjects = p_info.find("div", {"class": "list-subjects"}).text.strip()
+                abstract = p_info.find("p", {"class": "mathjax"}).text.strip()
+                paper_data = {
+                    "id": paper_id,
+                    "title": title,
+                    "authors": authors,
+                    "subjects": subjects,
+                    "abstract": abstract
+                }
+                papers_data.append(paper_data)
 
-            paper_id = p_id.find("span", {"class": "list-identifier"}).text.strip().split(":")[1].split()[0]
-            title = p_info.find("div", {"class": "list-title mathjax"}).text.strip()
-            authors = p_info.find("div", {"class": "list-authors"}).text.strip()
-            subjects = p_info.find("div", {"class": "list-subjects"}).text.strip()
-            abstract = p_info.find("p", {"class": "mathjax"}).text.strip()
-            
-            paper_data ={
-                "id": paper_id,
-                "title": title,
-                "authors": authors,
-                "subjects": subjects,
-                "abstract": abstract
-            }
-            papers_data.append(paper_data)
+    # Write the papers_data to a new JSON file
+    with open('papers_data.json', 'w') as json_file:
+        json.dump(papers_data, json_file, indent=4)
 
-    return papers_data, date
+    return papers_data
 
 
 def rank_papers(interest: str, papers_list: list, client):
@@ -61,8 +60,7 @@ def rank_papers(interest: str, papers_list: list, client):
                             "Abstract"
                             "Authors": 
                             "Relevancy score": "an integer score out of 10",
-                            "Reasons for match": "1-2 sentence short reasonings" along wth 
-                            
+                            "Reasons for match": "1-2 sentence short reasonings" along with 
                             
                             INTERESTS:
                             {interest}                        
@@ -79,3 +77,4 @@ def rank_papers(interest: str, papers_list: list, client):
     return output
 
 
+# print(fetch_papers(['cs.ai', 'cs.cv']))
