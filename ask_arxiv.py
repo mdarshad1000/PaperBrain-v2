@@ -1,5 +1,5 @@
 from llama_index import ServiceContext, SimpleDirectoryReader, VectorStoreIndex, OpenAIEmbedding
-from llama_index.llms import OpenAI as LlamaIndexOpenAI
+from llama_index.llms import OpenAI
 
 
 SYSTEM_PROMPT=''' 
@@ -11,7 +11,7 @@ SYSTEM_PROMPT='''
 
 def rag_pipeline(u_id, system_prompt):
     service_context = ServiceContext.from_defaults(
-        llm=LlamaIndexOpenAI(
+        llm=OpenAI(
             model='gpt-3.5-turbo',
             temperature=0.3,
             system_prompt=system_prompt,
