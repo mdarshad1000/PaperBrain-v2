@@ -106,9 +106,9 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
             with open(dir_path / f'{ID}.pdf', 'wb') as f:
                 f.write(response.content)  
 
-    index, service_context = rag_pipeline(u_id=u_id, system_prompt=SYSTEM_PROMPT)
+    index_rag, service_context = rag_pipeline(u_id=u_id, system_prompt=SYSTEM_PROMPT)
 
-    query_engine = index.as_query_engine(
+    query_engine = index_rag.as_query_engine(
             response_mode="tree_summarize", 
             verbose=True, 
             similarity_top_k=5, 
@@ -229,7 +229,7 @@ async def podcast(paperurl: str, index = Depends(get_pinecone_index_2)):
             "What are the main STRENGTHS of this paper?",
             "What are the main LIMITATIONS of this paper?",
             "What are the main APPLICATION of this paper?",
-            
+
         ]
 
         key_findings = [ask_questions(question=message, paper_id=paper_id, prompt=prompt_podcast,  index=index) for message in messages]
