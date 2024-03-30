@@ -1,9 +1,12 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from helpers import pinecone_connect, pinecone_retrieval, create_paper_dict
-from rag import rag_pipeline, SYSTEM_PROMPT
+from utils import pinecone_connect, pinecone_retrieval, create_paper_dict, pinecone_connect_2
+from ask_arxiv import rag_pipeline, SYSTEM_PROMPT
+from podcast import generate_audio_whisper, generate_script
+from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
 from daily_digest import fetch_papers, rank_papers
 from db_handling import Actions
+from aws_utils import check_podcast_exists, upload_mp3_to_s3, get_mp3_url
 from typing import Optional
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -15,7 +18,6 @@ import json
 import uuid
 import redis
 import os
-
 
 load_dotenv()
 
@@ -44,6 +46,10 @@ def get_pinecone_index():
     pc, index = pinecone_connect()
     return index
 
+def get_pinecone_index_2():
+    pc, index = pinecone_connect_2()
+    return index
+
 # Dependency for OpenAI client
 def get_openai_client():
     return OpenAI()
@@ -60,7 +66,6 @@ async def home():
 
 @app.post("/semantic-search/")
 async def search(query: str, categories: Optional[str]=None, year: Optional[str]=None, index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
-
     # calculate query embeddings
     response = client.embeddings.create(input=query, model='text-embedding-ada-002')
     query_vector = response.data[0].embedding
@@ -69,13 +74,13 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
     query_response = pinecone_retrieval(index=index, vector=query_vector, k=20, categories=categories, year=year)
     
     papers_list = [create_paper_dict(match) for match in query_response['matches']]
-    redis_client.flushdb()
+
     return papers_list
 
 
 @app.post("/ask-arxiv/")
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
-
+    # redis_client.flushall()
     index = get_pinecone_index()
     # calculate query embeddings
     response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
@@ -138,32 +143,159 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
            }
 
 
+@app.post('/indexpaper/')
+async def index_paper(paperurl: str, index = Depends(get_pinecone_index)):
+
+    # Extract the paper ID
+    paper_id = os.path.splitext(os.path.basename(paperurl))[0]
+
+    # Check if a namespace exists in Pinecone with this paper ID
+    flag = check_namespace_exists(paper_id=paper_id, index=index)
+
+    if flag:
+        print("Already indexed")
+    
+    else:
+        print("Not Indexed, Indexing Now ->")
+        response = requests.get(paperurl)
+
+        # Check if the request was successful and download the pdf
+        if response.status_code == 200:
+            with open(f'ask-arxiv/{paper_id}.pdf', 'wb') as f:
+                f.write(response.content) 
+
+       # Split PDF into chunks
+        texts, metadatas = split_pdf_into_chunks(paper_id=paper_id)
+        print("chunked", paper_id)
+
+        # Create embeddings and upsert to Pinecone
+        embed_and_upsert(paper_id=paper_id, texts=texts,
+                            metadatas=metadatas, index=index)
+
+    return {"paper_id": paper_id} 
+
+
+# Chat with arxiv paper
+@app.post('/explain-new')
+async def explain_question(paper_id: str, message: str, index = Depends(get_pinecone_index)):
+    print(index)
+    print(paper_id)
+    answer = ask_questions(question=message, paper_id=paper_id, prompt=prompt_chat, index=index)
+
+    return answer
+
+
+# Chat with arxiv paper
+@app.post('/podcast')
+async def podcast(paperurl: str, index = Depends(get_pinecone_index_2)):
+    # Extract the paper ID
+    paper_id = os.path.splitext(os.path.basename(paperurl))[0]
+
+    # Check if podcast already exists
+    podcast_exists, podcast_url = check_podcast_exists(paper_id=paper_id)
+
+    if podcast_exists:
+        print("podcast exists in S3")
+        return get_mp3_url(f'{paper_id}.mp3')
+    
+    else:
+        # Check if a namespace exists in Pinecone with this paper ID
+        flag = check_namespace_exists(paper_id=paper_id, index=index)
+        print(flag)
+
+        if flag:
+            print("Already indexed")
+        
+        else:
+            print("Not Indexed, Indexing Now ->")
+            response = requests.get(paperurl)
+
+            # Check if the request was successful and download the pdf
+            if response.status_code == 200:
+                with open(f'ask-arxiv/{paper_id}.pdf', 'wb') as f:
+                    f.write(response.content) 
+
+            # Split PDF into chunks
+            texts, metadatas = split_pdf_into_chunks(paper_id=paper_id)
+            print("chunked", paper_id)
+
+            # Create embeddings and upsert to Pinecone
+            embed_and_upsert(paper_id=paper_id, texts=texts,
+                                metadatas=metadatas, index=index)
+        
+        messages = [
+            "What are the main FINDINGS of this paper?",
+            "What are the METHODS used in this paper?",
+            "What are the main STRENGTHS of this paper?",
+            "What are the main LIMITATIONS of this paper?",
+            "What are the main APPLICATION of this paper?",
+            
+        ]
+
+        key_findings = [ask_questions(question=message, paper_id=paper_id, prompt=prompt_podcast,  index=index) for message in messages]
+
+        print(key_findings)
+
+        try:
+            paper = arxiv.Search(id_list=[paper_id]).results()
+
+            paper_info = [
+                {
+                    "TITLE\n": item.title,
+                    "AUTHORS\n": ", ".join(author.name for author in item.authors),
+                    "ABSTRACT\n": item.summary,
+                }
+                for item in paper
+                ]
+            
+            key_findings.insert(0, str(paper_info))
+
+        except Exception:
+            pass
+
+        print("After Adding Paper Info", key_findings)
+
+        response_dict = generate_script(key_findings=key_findings)
+
+        # Generate audio from OpenAI's Whisper
+        generate_audio_whisper(response_dict=response_dict, paper_id=paper_id)
+
+        # Upload podcast to AWS S3
+        upload_mp3_to_s3(paper_id=paper_id)
+
+        os.remove(f'podcast/{paper_id}.mp3')
+
+        new_podcast_url = get_mp3_url(f'{paper_id}.mp3')
+
+        return new_podcast_url, key_findings, response_dict
+
+
 @app.post("/daily-digest/")
 async def daily_digest(user_id: str, date: str, client: OpenAI = Depends(get_openai_client)):
         
-        cache_key = f'{user_id}:{date}'
+    cache_key = f'{user_id}:{date}'
 
-        cached_result = redis_client.get(cache_key)
+    cached_result = redis_client.get(cache_key)
 
-        if cached_result:
-            # If the result is in the cache, return it directly
-            return json.loads(cached_result)
-        else:
-            database = Actions()
+    if cached_result:
+        # If the result is in the cache, return it directly
+        return json.loads(cached_result)
+    else:
+        database = Actions()
 
-            categories, interest = database.get_user_preference(user_id=user_id)
-            
-            papers_lists = []
-
-            for category in categories:
-                papers_data = fetch_papers(category=category)
-                papers_lists.append(papers_data)
-            
-            answer = rank_papers(interest=interest, papers_list=papers_lists, client=client)
-            
-            response_json = json.loads(answer)
-
-            redis_client.setex(cache_key, 24*3600, json.dumps(response_json))
-            
-            return response_json
+        categories, interest = database.get_user_preference(user_id=user_id)
         
+        papers_lists = []
+
+        for category in categories:
+            papers_data = fetch_papers(category=category)
+            papers_lists.append(papers_data)
+        
+        answer = rank_papers(interest=interest, papers_list=papers_lists, client=client)
+        
+        response_json = json.loads(answer)
+
+        redis_client.setex(cache_key, 24*3600, json.dumps(response_json))
+        
+        return response_json
+    
