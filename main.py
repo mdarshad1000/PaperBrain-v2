@@ -81,7 +81,7 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # redis_client.flushall()
     from ask_arxiv import rag_pipeline, SYSTEM_PROMPT
-    
+
     index = get_pinecone_index()
     # calculate query embeddings
     response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
@@ -258,6 +258,7 @@ async def podcast(paperurl: str, index = Depends(get_pinecone_index_2)):
 
         response_dict = generate_script(key_findings=key_findings)
 
+        print(response_dict)
         # Generate audio from OpenAI's Whisper
         generate_audio_whisper(response_dict=response_dict, paper_id=paper_id)
 
