@@ -69,3 +69,19 @@ def get_mp3_url(filename: str):
         return {"url": response}
     except Exception as e:
         raise e
+
+
+def get_podcast_json_file():
+    k = get_podcast_list()
+    x = {}
+
+    ptr = 1
+    for item in k:
+        x.update({ptr:item['url']})
+        ptr += 1
+        
+    import json
+    with open('all_files.json', 'w') as f:
+        json.dump(x, f)
+
+
