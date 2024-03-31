@@ -71,6 +71,7 @@ def pinecone_connect_2():
     
     return pc, index
 
+
 def load_data(file_path, categories, start_year, end_year):
     """
     Returns a generator over the papers contained in `file_path`, belonging to
