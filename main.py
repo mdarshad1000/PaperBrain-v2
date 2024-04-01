@@ -80,7 +80,7 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
 @app.post("/ask-arxiv/")
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # redis_client.flushall()
-    
+
     from ask_arxiv import rag_pipeline
 
     index = get_pinecone_index()
@@ -108,13 +108,13 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
             with open(dir_path / f'{ID}.pdf', 'wb') as f:
                 f.write(response.content)  
 
-    index_rag, service_context = rag_pipeline(u_id=u_id)
+    index_rag, service_context_rag = rag_pipeline(u_id=u_id)
 
     query_engine = index_rag.as_query_engine(
             response_mode="tree_summarize", 
             verbose=True, 
             similarity_top_k=5, 
-            service_context=service_context
+            service_context=service_context_rag
         )
     
     response = query_engine.query(request.question)
