@@ -5,6 +5,8 @@ from podcast import generate_audio_whisper, generate_script
 from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
 from daily_digest import fetch_papers, rank_papers
 from db_handling import Actions
+from llama_index import ServiceContext, SimpleDirectoryReader, VectorStoreIndex, OpenAIEmbedding
+from llama_index.llms import OpenAI as LLamaOpenAI
 from aws_utils import check_podcast_exists, upload_mp3_to_s3, get_mp3_url
 from typing import Optional
 from pydantic import BaseModel
@@ -17,6 +19,14 @@ import json
 import uuid
 import redis
 import os
+
+
+
+SYSTEM_PROMPT_ASK = ''' 
+    You are an Expert in answering Research question. Your answer is to the point and you don't make things up.\
+    You will receive a query or a question from Me, along with 4 articles/research paper for that query.\
+    Make use of the relevant information for answering. Do not start you answer with 'Based on the given context' or similar phrases."
+    '''
 
 load_dotenv()
 
@@ -81,8 +91,6 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # redis_client.flushall()
 
-    from ask_arxiv import rag_pipeline
-
     index = get_pinecone_index()
     # calculate query embeddings
     response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
@@ -108,13 +116,25 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
             with open(dir_path / f'{ID}.pdf', 'wb') as f:
                 f.write(response.content)  
 
-    index_rag, service_context_rag = rag_pipeline(u_id=u_id)
+    service_context = ServiceContext.from_defaults(
+        llm=LLamaOpenAI(
+            model='gpt-3.5-turbo',
+            temperature=0.3,
+            system_prompt=SYSTEM_PROMPT_ASK,
+        ),
+        embed_model=OpenAIEmbedding(),
+        chunk_size=500,
+    )
+    
+    documents = SimpleDirectoryReader(f"ask-arxiv/{u_id}", recursive=True).load_data()
+    index_rag = VectorStoreIndex.from_documents(documents)
+
 
     query_engine = index_rag.as_query_engine(
             response_mode="tree_summarize", 
             verbose=True, 
             similarity_top_k=5, 
-            service_context=service_context_rag
+            service_context=service_context
         )
     
     response = query_engine.query(request.question)
