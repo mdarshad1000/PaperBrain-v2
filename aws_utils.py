@@ -63,7 +63,7 @@ def get_mp3_url(filename: str):
         response = s3.generate_presigned_url(
             "get_object",
             Params={"Bucket": bucket_name, "Key": filename},
-            ExpiresIn=10000,
+            ExpiresIn=None,
             HttpMethod="GET",
         )
         return {"url": response}
@@ -84,4 +84,4 @@ def get_podcast_json_file():
         json.dump(x, f)
         
 
-# get_podcast_json_file()
+get_podcast_json_file()

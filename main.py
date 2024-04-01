@@ -80,7 +80,7 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
 @app.post("/ask-arxiv/")
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # redis_client.flushall()
-    import ask_arxiv
+    from ask_arxiv import rag_pipeline
 
     index = get_pinecone_index()
     # calculate query embeddings
@@ -107,19 +107,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
             with open(dir_path / f'{ID}.pdf', 'wb') as f:
                 f.write(response.content)  
 
-    index_rag, service_context = ask_arxiv.rag_pipeline(u_id=u_id)
-    
-    query_engine = index_rag.as_query_engine(
-            response_mode="tree_summarize", 
-            verbose=True, 
-            similarity_top_k=5, 
-            service_context=service_context
-        )
-    
-    response = query_engine.query(request.question)
-
-    # Model Response
-    answer = response.response
+    response = rag_pipeline(u_id=u_id)
 
     # Retrieve the Paper ID from the Response object
     arxiv_id = [response.source_nodes[i].node.metadata["file_name"].rstrip('.pdf') for i in range(len(response.source_nodes))]
@@ -139,7 +127,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
     ]
 
     return {
-            "answer": answer,
+            "answer": response,
             "citation": paper_info,
            }
 
