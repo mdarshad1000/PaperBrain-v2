@@ -5,7 +5,6 @@ from podcast import generate_audio_whisper, generate_script
 from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
 from daily_digest import fetch_papers, rank_papers
 from db_handling import Actions
-import ask_arxiv
 from aws_utils import check_podcast_exists, upload_mp3_to_s3, get_mp3_url
 from typing import Optional
 from pydantic import BaseModel
@@ -81,6 +80,7 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
 @app.post("/ask-arxiv/")
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # redis_client.flushall()
+    import ask_arxiv
 
     index = get_pinecone_index()
     # calculate query embeddings
