@@ -128,7 +128,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
     ]
 
     return {
-            "answer": response["response"],
+            "answer": response.response,
             "citation": paper_info,
            }
 
