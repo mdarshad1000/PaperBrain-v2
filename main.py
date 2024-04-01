@@ -81,6 +81,7 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
 @app.post("/ask-arxiv/")
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # redis_client.flushall()
+    
     index = get_pinecone_index()
     # calculate query embeddings
     response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
