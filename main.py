@@ -5,8 +5,7 @@ from podcast import generate_audio_whisper, generate_script
 from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
 from daily_digest import fetch_papers, rank_papers
 from db_handling import Actions
-from llama_index import ServiceContext, SimpleDirectoryReader, VectorStoreIndex, OpenAIEmbedding
-from llama_index.llms import OpenAI as LLamaOpenAI
+from llama_index import ServiceContext, SimpleDirectoryReader, VectorStoreIndex, OpenAIEmbedding, llms
 from aws_utils import check_podcast_exists, upload_mp3_to_s3, get_mp3_url
 from typing import Optional
 from pydantic import BaseModel
@@ -117,7 +116,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
                 f.write(response.content)  
 
     service_context = ServiceContext.from_defaults(
-        llm=LLamaOpenAI(
+        llm=llms.OpenAI(
             model='gpt-3.5-turbo',
             temperature=0.3,
             system_prompt=SYSTEM_PROMPT_ASK,
