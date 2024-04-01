@@ -36,7 +36,7 @@ SYSTEM_PROMPT = """
         The Interviewer's name is Noah Bennett, and the expert name is Ethan Sullivan. Keep in mind that Ethan is not a
         co-author or anyone related to the paper, he is just an Expert. You may consult another Specialist Emma Anderson
         in between the podcast, or even at the starting too (rarely). When consulting her, give a very quick introduction.
-        She should have a maximum of 3 dialogues. Include Emma in the conversation in a very smooth and intelligent way.
+        She should have a minimum 2 and maximum of 3 dialogues. Include Emma in the conversation in a very smooth and intelligent way.
 
     Tone: 
         Maintain a conversational yet authoritative tone. Noah and Ethan should engage the audience by discussing the paper's
@@ -102,6 +102,10 @@ def generate_audio_whisper(response_dict: dict, paper_id: str):
     intro_music = AudioSegment.from_mp3("music_essentials/intro.mp3")
     final_audio += intro_music
 
+    directory_name = f"podcast/{paper_id}"
+    if not os.path.exists(directory_name):
+        os.makedirs(directory_name)
+    
     # for key in sorted(response_dict.keys(), key=int):  # Ensure keys are sorted numerically
     #     if int(key) % 2 == 0:
     #         voice = "onyx"
@@ -120,7 +124,7 @@ def generate_audio_whisper(response_dict: dict, paper_id: str):
             input=response_dict[key]
         )
         # Generate a unique filename for each segment
-        filename = f"podcast/{key}.mp3"
+        filename = f"podcast/{paper_id}/{key}.mp3"
         tts_response.stream_to_file(filename)
         intermediate_files.append(filename)
 
@@ -143,11 +147,16 @@ def generate_audio_whisper(response_dict: dict, paper_id: str):
     final_mix += clipped_outro - 15 # lower the volume of outro
     
     # Export the mixed audio to a new file
-    final_mix.export(f"podcast/{paper_id}.mp3", format="mp3")
+    final_mix.export(f"podcast/{paper_id}/{paper_id}.mp3", format="mp3")
 
     # Delete intermediate files
     for file in intermediate_files:
         os.remove(file)
+
+    pdf_path = f'ask-arxiv/{paper_id}.pdf'
+    if os.path.exists(pdf_path):
+        os.remove(pdf_path)
+
 
     return "DONE"
 
