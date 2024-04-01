@@ -265,7 +265,7 @@ async def podcast(paperurl: str, index = Depends(get_pinecone_index_2)):
         # Upload podcast to AWS S3
         upload_mp3_to_s3(paper_id=paper_id)
 
-        os.remove(f'podcast/{paper_id}.mp3')
+        os.remove(f'podcast/{paper_id}/{paper_id}.mp3')
 
         new_podcast_url = get_mp3_url(f'{paper_id}.mp3')
 
