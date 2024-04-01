@@ -5,6 +5,7 @@ from podcast import generate_audio_whisper, generate_script
 from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
 from daily_digest import fetch_papers, rank_papers
 from db_handling import Actions
+from ask_arxiv import rag_pipeline
 from aws_utils import check_podcast_exists, upload_mp3_to_s3, get_mp3_url
 from typing import Optional
 from pydantic import BaseModel
@@ -80,8 +81,6 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
 @app.post("/ask-arxiv/")
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # redis_client.flushall()
-    from ask_arxiv import rag_pipeline, SYSTEM_PROMPT
-
     index = get_pinecone_index()
     # calculate query embeddings
     response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
@@ -107,7 +106,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
             with open(dir_path / f'{ID}.pdf', 'wb') as f:
                 f.write(response.content)  
 
-    index_rag, service_context = rag_pipeline(u_id=u_id, system_prompt=SYSTEM_PROMPT)
+    index_rag, service_context = rag_pipeline(u_id=u_id)
 
     query_engine = index_rag.as_query_engine(
             response_mode="tree_summarize", 

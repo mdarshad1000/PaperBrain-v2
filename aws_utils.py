@@ -48,7 +48,7 @@ def check_podcast_exists(paper_id: str):
 def upload_mp3_to_s3(paper_id: str):
     # Create an S3 client
     s3 = boto3.client('s3')
-    local_file_path = f'podcast/{paper_id}.mp3'
+    local_file_path = f'podcast/{paper_id}/{paper_id}.mp3'
     # Upload the local file to S3 with the specified key (paper_id)
     try:
         s3.upload_file(local_file_path, bucket_name, f"{paper_id}.mp3")
@@ -70,7 +70,6 @@ def get_mp3_url(filename: str):
     except Exception as e:
         raise e
 
-
 def get_podcast_json_file():
     k = get_podcast_list()
     x = {}
@@ -81,7 +80,8 @@ def get_podcast_json_file():
         ptr += 1
         
     import json
-    with open('all_files.json', 'w') as f:
+    with open('pm3_files.json', 'w') as f:
         json.dump(x, f)
+        
 
-
+# get_podcast_json_file()

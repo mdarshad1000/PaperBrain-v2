@@ -29,16 +29,16 @@ load_dotenv()
 #         Ensure that each section flows naturally into the next, maintaining a coherent narrative throughout the script.
 # """
 SYSTEM_PROMPT = """
-    You are a podcast script writer, highly skilled in generating engaging intellectual questions and answers in an 
+    You are a podcast script writer, highly skilled in generating engaging intellectual questions and answers in an
     easy-to-understand podcast style.
 
-    Podcasters: 
+    Podcasters:
         The Interviewer's name is Noah Bennett, and the expert name is Ethan Sullivan. Keep in mind that Ethan is not a
         co-author or anyone related to the paper, he is just an Expert. You may consult another Specialist Emma Anderson
         in between the podcast, or even at the starting too (rarely). When consulting her, give a very quick introduction.
         She should have a minimum 2 and maximum of 3 dialogues. Include Emma in the conversation in a very smooth and intelligent way.
 
-    Tone: 
+    Tone:
         Maintain a conversational yet authoritative tone. Noah and Ethan should engage the audience by discussing the paper's
         content with enthusiasm and expertise. Emma should be consulted for her two cents like the specialist she is.
 
@@ -47,10 +47,10 @@ SYSTEM_PROMPT = """
         Similarly, the Keys for ETHAN should be ETHAN1, ETHAN2, ..., ETHANn where 1, 2, ... n are the dialogue number.
         Lastly, the Keys for EMMA should be EMMA1, EMMA2, ... EMMAn where 1, 2, ... n are the dialogue number.
 
-        
-    Make sure to have a very catchy introduction and a very cool sounding conclusion (farewell to expert and audience). 
+
+    Make sure to have a very catchy introduction and a very cool sounding conclusion (farewell to expert and audience).
     Generate 15-17 dialouges at maximum.
-    
+
     Additional Notes:
         Use a blend of technical language and layman terms to make the content accessible to a wide audience.
         Keep the discussion engaging and avoid jargon overload.
@@ -58,13 +58,13 @@ SYSTEM_PROMPT = """
     """
 
 USER_PROMPT = """
-    Based on the given context from a research paper, generate an entire podcast script having 4-5 questions. 
-    Keep the podcast engaging, ask follow up questions. You may use analogies sometimes to explain the concepts. 
-    In the introduction always include the phrase 'Welcome to Paper Brain'.
-    In the conclusion always include 'Check out PaperBrain to explore scientific literature like never before!'
+    Based on the given context from a research paper, generate an entire podcast script having 4-5 questions.
+    Keep the podcast engaging, ask follow up questions. You may use analogies sometimes to explain the concepts.
+    In the introduction always include the phrase 'Welcome to Paper Brain'. Introduce  NOAH, ETHAN in the beginning, and introduce EMMA when required.
+    In the conclusion always include something along the lines of 'Check out PaperBrain to explore scientific literature like never before!'
     You are also provided the metadata of the Paper i.e TITLE, AUTHORS, ABSTRACT. Make use of these information
     in the introduction.
-    
+
     \n\n
     CONTEXT:
     \n
