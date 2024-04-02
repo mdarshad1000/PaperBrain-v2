@@ -28,7 +28,7 @@ def get_podcast_list():
                 s3.generate_presigned_url(
                     "get_object",
                     Params={"Bucket": bucket_name, "Key": obj["Key"]},
-                    ExpiresIn=3600 
+                    ExpiresIn=None 
                 ),'filename': obj['Key'].split('/')[-1]}
             )
         # print(podcast_urls)
