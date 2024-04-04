@@ -17,3 +17,4 @@ requests==2.31.0
 tiktoken==0.5.2
 tqdm
 uvicorn==0.21.1
+ffmpeg-python==0.2.0
