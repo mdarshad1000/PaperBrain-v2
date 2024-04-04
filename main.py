@@ -126,8 +126,8 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
         }
         for paper in papers
     ]
-    
-    os.remove('ask-arxiv/{u_id}')
+
+    os.remove(f'ask-arxiv/{u_id}')
 
     return {
             "answer": response.response,
