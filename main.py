@@ -126,6 +126,8 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
         }
         for paper in papers
     ]
+    
+    os.remove('ask-arxiv/{u_id}')
 
     return {
             "answer": response.response,
@@ -230,9 +232,9 @@ async def podcast(paperurl: str, index = Depends(get_pinecone_index_2)):
 
             paper_info = [
                 {
-                    "TITLE\n": item.title,
-                    "AUTHORS\n": ", ".join(author.name for author in item.authors),
-                    "ABSTRACT\n": item.summary,
+                    "TITLE:  ": item.title,
+                    "AUTHORS:  ": ", ".join(author.name for author in item.authors),
+                    "ABSTRACT:  ": item.summary,
                 }
                 for item in paper
                 ]
@@ -247,6 +249,7 @@ async def podcast(paperurl: str, index = Depends(get_pinecone_index_2)):
         response_dict = generate_script(key_findings=key_findings)
 
         print(response_dict)
+
         # Generate audio from OpenAI's Whisper
         generate_audio_whisper(response_dict=response_dict, paper_id=paper_id)
 
@@ -258,6 +261,19 @@ async def podcast(paperurl: str, index = Depends(get_pinecone_index_2)):
         new_podcast_url = get_mp3_url(f'{paper_id}.mp3')
 
         return new_podcast_url, key_findings, response_dict
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @app.post("/daily-digest/")
