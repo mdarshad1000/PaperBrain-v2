@@ -17,6 +17,7 @@ import json
 import uuid
 import redis
 import os
+import shutil
 
 load_dotenv()
 
@@ -127,7 +128,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
         for paper in papers
     ]
 
-    os.remove(f'ask-arxiv/{u_id}')
+    shutil.rmtree(f'ask-arxiv/{u_id}')
 
     return {
             "answer": response.response,
