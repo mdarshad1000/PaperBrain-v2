@@ -114,12 +114,12 @@ def generate_script(key_findings: str):
         logging.error("Failed to decode JSON response from OpenAI.")
         sys.exit(1)
 
-    try:
-        with open('all_files.json', 'w') as f:
-            json.dump(response_dict, f)
-    except IOError as e:
-        logging.error("Failed to write to file: %s", e)
-        sys.exit(1)
+    # try:
+    #     with open('all_files.json', 'w') as f:
+    #         json.dump(response_dict, f)
+    # except IOError as e:
+    #     logging.error("Failed to write to file: %s", e)
+    #     sys.exit(1)
 
     return response_dict
 
