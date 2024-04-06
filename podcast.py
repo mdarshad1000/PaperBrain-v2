@@ -2,14 +2,27 @@
 from openai import OpenAI
 from pydub import AudioSegment
 from dotenv import load_dotenv
+from db_handling import Action
 import os
 import json
 import logging
 import sys
-
-logging.basicConfig(level=logging.INFO)
+from rq import Queue
+from redis import Redis
 
 load_dotenv()
+
+db_actions = Action(
+    host=os.getenv('HOST'),
+    dbname=os.getenv('DATABASE'),
+    user=os.getenv('USERNAME'),
+    password=os.getenv('PASSWORD'),
+    port=os.getenv('PORT')
+)
+r = Redis()
+q = Queue(connection=r)
+
+logging.basicConfig(level=logging.INFO)
 
 # SYSTEM_PROMPT = """
 #     You are a podcast script writer, highly skilled in generating engaging intellectual questions and answers in an 
@@ -110,6 +123,7 @@ def generate_script(key_findings: str):
 
     return response_dict
 
+
 def generate_audio_whisper(response_dict: dict, paper_id: str):
     final_audio = AudioSegment.empty()
     intermediate_files = []
@@ -170,9 +184,3 @@ def generate_audio_whisper(response_dict: dict, paper_id: str):
 
     logging.info("Audio generation completed.")
     return "DONE"
-
-
-x = {}
-# y = generate_script(x)
-# generate_audio_whisper(x, 'urdu_story')
-
