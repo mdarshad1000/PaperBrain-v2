@@ -15,10 +15,10 @@ import arxiv
 import uuid
 import os
 import shutil
+import json
 import requests
 from db_handling import Action
 from rq import Queue
-import json
 from redis import Redis
 import logging
 
@@ -34,7 +34,11 @@ db_actions = Action(
     port=os.getenv('PORT')
 )
 
-r = Redis()
+r = Redis(
+  host=os.getenv('REDIS_HOST'),
+  port=os.getenv('REDIS_PORT'),
+  password=os.getenv('REDIS_PASSWORD')
+)
 
 q = Queue(connection=r)
 
