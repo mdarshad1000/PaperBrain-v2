@@ -18,3 +18,4 @@ tiktoken==0.5.2
 tqdm
 uvicorn==0.21.1
 ffmpeg-python==0.2.0
+rq==1.16.1
