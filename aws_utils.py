@@ -1,6 +1,7 @@
 import boto3
 import os
 from dotenv import load_dotenv
+from botocore.exceptions import NoCredentialsError
 
 load_dotenv()
 
@@ -19,19 +20,11 @@ def get_podcast_list():
         # List all objects (podcasts) in the S3 bucket
         response = s3.list_objects_v2(Bucket=bucket_name)
         files = response.get("Contents")
-        filename_test =[]
-        for file in files:
-            filename_test.append(file['Key'])
         podcast_urls = []
-        for obj in response.get("Contents", []):
-            podcast_urls.append({'url':                
-                s3.generate_presigned_url(
-                    "get_object",
-                    Params={"Bucket": bucket_name, "Key": obj["Key"]},
-                    ExpiresIn=None 
-                ),'filename': obj['Key'].split('/')[-1]}
-            )
-        # print(podcast_urls)
+        for obj in files:
+            # Construct a URL for accessing the object from AWS S3
+            url = f"https://{bucket_name}.s3.{os.getenv('AWS_REGION_NAME')}.amazonaws.com/{obj['Key']}"
+            podcast_urls.append({'url': url, 'filename': obj['Key'].split('/')[-1]})
     except Exception as e:
         print(e)
     return podcast_urls
@@ -51,21 +44,21 @@ def upload_mp3_to_s3(paper_id: str):
     local_file_path = f'podcast/{paper_id}/{paper_id}.mp3'
     # Upload the local file to S3 with the specified key (paper_id)
     try:
-        s3.upload_file(local_file_path, bucket_name, f"{paper_id}.mp3")
+        config = boto3.s3.transfer.TransferConfig(multipart_threshold=1024*25, max_concurrency=10,
+                                                  multipart_chunksize=1024*25, use_threads=True)
+        transfer = boto3.s3.transfer.S3Transfer(client=s3, config=config)
+        transfer.upload_file(local_file_path, bucket_name, f"{paper_id}.mp3")
         print(f"Successfully uploaded {local_file_path} as {paper_id}.mp3 to bucket {bucket_name}")
+    except NoCredentialsError:
+        print("No AWS credentials found")
     except Exception as e:
         print(f"Error uploading file: {e}")
     
 
 def get_mp3_url(filename: str):
     try:
-        # Generate a pre-signed URL for accessing the image from AWS S3
-        response = s3.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": bucket_name, "Key": filename},
-            ExpiresIn=None,
-            HttpMethod="GET",
-        )
+        # Construct a URL for accessing the object from AWS S3
+        response = f"https://{bucket_name}.s3.{os.getenv('AWS_REGION_NAME')}.amazonaws.com/{filename}"
         return {"url": response}
     except Exception as e:
         raise e
@@ -84,4 +77,4 @@ def get_podcast_json_file():
         json.dump(x, f)
         
 
-# get_podcast_json_file()
+# print(get_mp3_url('1905.10543v1.mp3'))
