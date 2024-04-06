@@ -1,7 +1,6 @@
 import boto3
 import os
 from dotenv import load_dotenv
-from botocore.exceptions import NoCredentialsError
 
 load_dotenv()
 
@@ -44,16 +43,11 @@ def upload_mp3_to_s3(paper_id: str):
     local_file_path = f'podcast/{paper_id}/{paper_id}.mp3'
     # Upload the local file to S3 with the specified key (paper_id)
     try:
-        config = boto3.s3.transfer.TransferConfig(multipart_threshold=1024*25, max_concurrency=10,
-                                                  multipart_chunksize=1024*25, use_threads=True)
-        transfer = boto3.s3.transfer.S3Transfer(client=s3, config=config)
-        transfer.upload_file(local_file_path, bucket_name, f"{paper_id}.mp3")
+        s3.upload_file(local_file_path, bucket_name, f"{paper_id}.mp3")
         print(f"Successfully uploaded {local_file_path} as {paper_id}.mp3 to bucket {bucket_name}")
-    except NoCredentialsError:
-        print("No AWS credentials found")
     except Exception as e:
         print(f"Error uploading file: {e}")
-    
+
 
 def get_mp3_url(filename: str):
     try:
@@ -62,6 +56,7 @@ def get_mp3_url(filename: str):
         return {"url": response}
     except Exception as e:
         raise e
+    
 
 def get_podcast_json_file():
     k = get_podcast_list()

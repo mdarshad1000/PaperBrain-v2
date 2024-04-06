@@ -1,2 +1,2 @@
-web: uvicorn app:app --port=$PORT --host=0.0.0.0
-worker: python worker.py
+web: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 2 --limit-concurrency 1000 --ws-ping-timeout 360
+worker: python3 worker.py

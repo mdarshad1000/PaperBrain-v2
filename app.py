@@ -288,19 +288,25 @@ async def podcast(paperurl: str):
             "data":paper_info
             }
     else:
-        job = q.enqueue(
-            create_podcast,
-            args=[paperurl],
-            timeout=366600,
-            job_id=paper_id # use the job id while enqueuing
-        )
-        # Update the status to PENDING
-        db_actions.add_new_podcast(paper_id=paper_id, status='PENDING')
+        pending = db_actions.check_pending_status(paper_id=paper_id)
+        print(pending)
+        if pending is not None:
+            return {"message":"Job in Queue"}
 
-        return { 
-            "flag": False,
-            "job_id":paper_id
-        }
+        else:
+            job = q.enqueue(
+                create_podcast,
+                args=[paperurl],
+                timeout=366600,
+                job_id=paper_id # use the job id while enqueuing
+            )
+
+            db_actions.add_new_podcast(paper_id=paper_id, status='PENDING')
+
+            return { 
+                "flag": False,
+                "job_id":paper_id
+            }
 
 
 # @app.post("/daily-digest/")
