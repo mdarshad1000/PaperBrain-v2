@@ -32,17 +32,17 @@ class Action:
         finally:
             self.conn_pool.putconn(conn)
 
-    def update_podcast_status(self, job_id, status):
-        query = 'UPDATE "Podcast" SET status = %s WHERE job_id = %s'
-        self.execute_query(query, (status, job_id))
+    def update_podcast_status(self, paper_id, status):
+        query = 'UPDATE "Podcast" SET status = %s WHERE paper_id = %s'
+        self.execute_query(query, (status, paper_id))
 
-    def update_podcast_information(self, job_id, paper_id, title, authors, abstract, transcript, s3_url):
-        query = 'UPDATE "Podcast" SET paper_id = %s, title = %s, authors = %s, abstract = %s, transcript = %s, s3_url = %s WHERE job_id = %s'
-        self.execute_query(query, (paper_id, title, authors ,abstract, transcript, s3_url, job_id))
+    def update_podcast_information(self, paper_id, title, authors, abstract, transcript, s3_url):
+        query = 'UPDATE "Podcast" SET title = %s, authors = %s, abstract = %s, transcript = %s, s3_url = %s WHERE paper_id = %s'
+        self.execute_query(query, (title, authors, abstract, transcript, s3_url, paper_id))
 
-    def add_new_podcast(self, job_id, status):
-        query = f'INSERT INTO "Podcast" (job_id, status) VALUES (%s, %s)'
-        self.execute_query(query, (job_id, status))
+    def add_new_podcast(self, paper_id, status):
+        query = f'INSERT INTO "Podcast" (paper_id, status) VALUES (%s, %s)'
+        self.execute_query(query, (paper_id, status))
 
     def get_podcast_info(self, paper_id):
         query = 'SELECT * FROM "Podcast" WHERE paper_id = %s'

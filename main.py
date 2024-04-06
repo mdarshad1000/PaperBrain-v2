@@ -71,7 +71,7 @@ def get_openai_client():
 class AskArxivRequest(BaseModel):
     question: str
 
-def create_podcast(paperurl: str, job_id: str):
+def create_podcast(paperurl: str):
     # Initialize Pinecone index and OpenAI client here
     _, index = pinecone_connect_2()
     # Extract the paper ID
@@ -146,11 +146,11 @@ def create_podcast(paperurl: str, job_id: str):
 
     new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
 
-    db_actions.update_podcast_status(job_id=job_id, status='SUCCESS')
+    db_actions.update_podcast_status(paper_id=paper_id, status='SUCCESS')
     title = paper_info[0]['TITLE']
     authors = paper_info[0]['AUTHORS']
     abstract = paper_info[0]['ABSTRACT']
-    db_actions.update_podcast_information(job_id=job_id, paper_id=paper_id, title=title, authors=authors, abstract=abstract, transcript=response_dict_json, s3_url=new_podcast_url)
+    db_actions.update_podcast_information(paper_id=paper_id, title=title, authors=authors, abstract=abstract, transcript=response_dict_json, s3_url=new_podcast_url)
 
     return "DONE"
 
@@ -288,19 +288,18 @@ async def podcast(paperurl: str):
             "data":paper_info
             }
     else:
-        job_id = str(uuid.uuid4())  # create a unique job id
         job = q.enqueue(
             create_podcast,
-            args=[paperurl, job_id],
+            args=[paperurl],
             timeout=366600,
-            job_id=job_id # use the job id while enqueuing
+            job_id=paper_id # use the job id while enqueuing
         )
         # Update the status to PENDING
-        db_actions.add_new_podcast(job_id=job_id, status='PENDING')
+        db_actions.add_new_podcast(paper_id=paper_id, status='PENDING')
 
         return { 
             "flag": False,
-            "job_id":job_id
+            "job_id":paper_id
         }
 
 

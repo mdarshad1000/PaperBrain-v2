@@ -3,6 +3,8 @@ from rq import Worker
 import os
 from dotenv import load_dotenv
 
+os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+
 load_dotenv()
 
 r = Redis(
@@ -10,7 +12,6 @@ r = Redis(
   port=os.getenv('REDIS_PORT'),
   password=os.getenv('REDIS_PASSWORD')
 )
-os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
 
 w = Worker(['default'], connection=r)
 w.work()
