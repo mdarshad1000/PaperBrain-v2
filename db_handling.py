@@ -1,49 +1,58 @@
-from dotenv import load_dotenv
-import os
-import psycopg2
+# database.py
+from psycopg2 import pool
+from psycopg2.extras import DictCursor
 
-load_dotenv()
+class Action:
+    def __init__(self, host, dbname, user, password, port):
+        self.conn_pool = pool.SimpleConnectionPool(1, 20,
+            host=host,
+            dbname=dbname,
+            user=user,
+            password=password,
+            port=port
+        )
 
-# Class including all the actions' functionality
-class Actions:
-    def __init__(self,):
-        self.host = os.getenv('HOST')
-        self.dbname = os.getenv('DATABASE')
-        self.user = os.getenv('USERNAME')
-        self.password = os.getenv('PASSWORD')
-        self.port = os.getenv("PORT")
-        self.conn = None
+    def execute_query(self, query, params=None):
+        conn = self.conn_pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                conn.commit()
+        finally:
+            self.conn_pool.putconn(conn)
 
-    # To connect the database
-    def connect(self):
-        if self.conn is None:
-            self.conn = psycopg2.connect(
-                host=self.host,
-                dbname=self.dbname,
-                user=self.user,
-                password=self.password,
-                port=self.port
-            )
-            print('Database connected successfully!')
+    def execute_and_fetch(self, query, params=None):
+        conn = self.conn_pool.getconn()
+        try:
+            with conn.cursor(cursor_factory=DictCursor) as cur:
+                cur.execute(query, params)
+                result = cur.fetchall()
+                print(result)
+                return [dict(row) for row in result]
+        finally:
+            self.conn_pool.putconn(conn)
 
+    def update_podcast_status(self, job_id, status):
+        query = 'UPDATE "Podcast" SET status = %s WHERE job_id = %s'
+        self.execute_query(query, (status, job_id))
+
+    def update_podcast_information(self, job_id, paper_id, title, authors, abstract, transcript, s3_url):
+        query = 'UPDATE "Podcast" SET paper_id = %s, title = %s, authors = %s, abstract = %s, transcript = %s, s3_url = %s WHERE job_id = %s'
+        self.execute_query(query, (paper_id, title, authors ,abstract, transcript, s3_url, job_id))
+
+    def add_new_podcast(self, job_id, status):
+        query = f'INSERT INTO "Podcast" (job_id, status) VALUES (%s, %s)'
+        self.execute_query(query, (job_id, status))
+
+    def get_podcast_info(self, paper_id):
+        query = 'SELECT * FROM "Podcast" WHERE paper_id = %s'
+        result = self.execute_and_fetch(query, (paper_id, ))
+        return result[0]
 
     def get_all_users_info(self):
-        self.connect()
-        cur = self.conn.cursor()
-        cur.execute('SELECT * FROM "User";')
-        rows = cur.fetchall()
-        for row in rows:
-            return row
-        
+        query = 'SELECT * FROM "User";'
+        self.execute_query(query)
 
     def get_user_preference(self, user_id):
-        self.connect()
-        cur = self.conn.cursor()
-        cur.execute('SELECT paper_category, paper_interest FROM "User"\
-                     WHERE id = %s;', (user_id,))
-        print(f'Fetching Interest & Category for {user_id}')
-        rows = cur.fetchone()
-        return rows
-
-
-
+        query = 'SELECT paper_category, paper_interest FROM "User" WHERE id = %s;'
+        self.execute_query(query, (user_id,))
