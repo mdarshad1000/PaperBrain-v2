@@ -52,7 +52,7 @@ class Action:
     def check_pending_status(self, paper_id):
         query = 'SELECT * FROM "Podcast" WHERE paper_id = %s'
         result = self.execute_and_fetch(query, (paper_id,))
-        return result[0]
+        return result
 
     def get_all_users_info(self):
         query = 'SELECT * FROM "User";'

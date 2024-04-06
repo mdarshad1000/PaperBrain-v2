@@ -124,63 +124,82 @@ def generate_script(key_findings: str):
     return response_dict
 
 
-def generate_audio_whisper(response_dict: dict, paper_id: str):
-    final_audio = AudioSegment.empty()
-    intermediate_files = []
-
+def load_intro_music():
     logging.info("Loading intro music...")
-    intro_music = AudioSegment.from_mp3("music_essentials/intro.mp3")
-    final_audio += intro_music
+    return AudioSegment.from_mp3("music_essentials/intro.mp3")
 
+def create_directory(paper_id: str):
     directory_name = f"podcast/{paper_id}"
     if not os.path.exists(directory_name):
         os.makedirs(directory_name)
-    
-    for key in response_dict.keys():
-        if "EMMA" in key:
-            voice = "nova"
-        elif "ETHAN" in key:
-            voice = "onyx"
-        else:
-            voice = "echo"
-        
-        logging.info(f"Generating speech for {key} with voice {voice}...")
-        tts_response = clientOAI.audio.speech.create(
-            model="tts-1",
-            voice=voice,
-            input=response_dict[key]
-        )
-        filename = f"podcast/{paper_id}/{key}.mp3"
-        logging.info(f"Saving speech to {filename}...")
-        tts_response.stream_to_file(filename)
-        intermediate_files.append(filename)
+    return directory_name
 
-        logging.info("Appending this audio segment to the final audio...")
-        segment = AudioSegment.from_mp3(filename)
-        final_audio += segment
+def generate_speech(key: str, text: str):
+    voice = "nova" if "EMMA" in key else "onyx" if "ETHAN" in key else "echo"
+    logging.info(f"Generating speech for {key} with voice {voice}...")
+    return clientOAI.audio.speech.create(
+        model="tts-1",
+        voice=voice,
+        input=text
+    )
 
+def save_speech_to_file(tts_response, filename: str):
+    logging.info(f"Saving speech to {filename}...")
+    tts_response.stream_to_file(filename)
+
+def append_audio_segment(filename: str, final_audio):
+    logging.info("Appending this audio segment to the final audio...")
+    segment = AudioSegment.from_mp3(filename)
+    return final_audio + segment
+
+def load_and_adjust_bg_music():
     logging.info("Loading and adjusting background music...")
     bg_music = AudioSegment.from_mp3("music_essentials/bg_music.mp3")
-    bg_music = bg_music - 30
+    return bg_music - 30
 
+def overlay_bg_music(final_audio, bg_music):
     logging.info("Overlaying background music onto the final audio...")
-    final_mix = final_audio.overlay(bg_music, loop=True)
+    return final_audio.overlay(bg_music, loop=True)
 
+def add_outro(final_mix):
     logging.info("Adding outro...")
     outro_music = AudioSegment.from_mp3("music_essentials/outro.mp3")
     clipped_outro = outro_music[-5500:]
-    final_mix += clipped_outro - 15
-    
+    return final_mix + (clipped_outro - 15)
+
+def export_audio(final_mix, paper_id: str):
     logging.info("Exporting the mixed audio to a new file...")
     final_mix.export(f"podcast/{paper_id}/{paper_id}.mp3", format="mp3")
 
+def delete_intermediate_files(intermediate_files: list):
     logging.info("Deleting intermediate files...")
     for file in intermediate_files:
         os.remove(file)
 
+def delete_pdf(paper_id: str):
     pdf_path = f'ask-arxiv/{paper_id}.pdf'
     if os.path.exists(pdf_path):
         os.remove(pdf_path)
+
+def generate_audio_whisper(response_dict: dict, paper_id: str):
+    final_audio = load_intro_music()
+    intermediate_files = []
+
+    directory_name = create_directory(paper_id)
+    
+    for key in response_dict.keys():
+        tts_response = generate_speech(key, response_dict[key])
+        filename = f"{directory_name}/{key}.mp3"
+        save_speech_to_file(tts_response, filename)
+        intermediate_files.append(filename)
+        final_audio = append_audio_segment(filename, final_audio)
+
+    bg_music = load_and_adjust_bg_music()
+    final_mix = overlay_bg_music(final_audio, bg_music)
+    final_mix = add_outro(final_mix)
+    export_audio(final_mix, paper_id)
+    delete_intermediate_files(intermediate_files)
+    delete_pdf(paper_id)
 
     logging.info("Audio generation completed.")
     return "DONE"

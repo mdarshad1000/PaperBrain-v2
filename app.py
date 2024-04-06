@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from utils import pinecone_connect, pinecone_retrieval, create_paper_dict, pinecone_connect_2
-from podcast import generate_audio_whisper, generate_script
+from podcast import (generate_script, load_intro_music, create_directory, generate_speech, save_speech_to_file, append_audio_segment, 
+                     load_and_adjust_bg_music, overlay_bg_music, add_outro, export_audio, delete_intermediate_files, delete_pdf)
 from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
 # from daily_digest import fetch_papers, rank_papers
 from aws_utils import get_mp3_url, upload_mp3_to_s3, check_podcast_exists
@@ -137,7 +138,24 @@ def create_podcast(paperurl: str):
     response_dict_json = json.dumps(response_dict)  # Convert dict to JSON string for postgres
 
     # Generate audio from OpenAI's Whisper
-    generate_audio_whisper(response_dict=response_dict, paper_id=paper_id)
+    final_audio = load_intro_music()
+    intermediate_files = []
+
+    directory_name = create_directory(paper_id)
+    
+    for key in response_dict.keys():
+        tts_response = generate_speech(key, response_dict[key])
+        filename = f"{directory_name}/{key}.mp3"
+        save_speech_to_file(tts_response, filename)
+        intermediate_files.append(filename)
+        final_audio = append_audio_segment(filename, final_audio)
+
+    bg_music = load_and_adjust_bg_music()
+    final_mix = overlay_bg_music(final_audio, bg_music)
+    final_mix = add_outro(final_mix)
+    export_audio(final_mix, paper_id)
+    delete_intermediate_files(intermediate_files)
+    delete_pdf(paper_id)
 
     # Upload podcast to AWS S3
     upload_mp3_to_s3(paper_id=paper_id)
@@ -147,9 +165,11 @@ def create_podcast(paperurl: str):
     new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
 
     db_actions.update_podcast_status(paper_id=paper_id, status='SUCCESS')
+
     title = paper_info[0]['TITLE']
     authors = paper_info[0]['AUTHORS']
     abstract = paper_info[0]['ABSTRACT']
+
     db_actions.update_podcast_information(paper_id=paper_id, title=title, authors=authors, abstract=abstract, transcript=response_dict_json, s3_url=new_podcast_url)
 
     return "DONE"
@@ -290,7 +310,7 @@ async def podcast(paperurl: str):
     else:
         pending = db_actions.check_pending_status(paper_id=paper_id)
         print(pending)
-        if pending is not None:
+        if len(pending) != 0:
             return {"message":"Job in Queue"}
 
         else:
