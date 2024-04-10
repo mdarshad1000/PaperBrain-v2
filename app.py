@@ -11,6 +11,10 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
 from openai import OpenAI
+from db_handling import Action
+from rq import Queue
+from redis import Redis
+import logging
 import requests
 import arxiv
 import uuid
@@ -18,10 +22,8 @@ import os
 import shutil
 import json
 import requests
-from db_handling import Action
-from rq import Queue
-from redis import Redis
-import logging
+
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -78,7 +80,7 @@ def create_podcast(paperurl: str):
     # Extract the paper ID
     paper_id = os.path.splitext(os.path.basename(paperurl))[0]
 
-    # Check if a namespace exists in Pinecone with this paper ID
+    # Check if a namespace exists in Pinecone with this pape ID
     flag = check_namespace_exists(paper_id=paper_id, index=index)
     logging.info(flag)
 
@@ -180,7 +182,7 @@ async def home():
     return {"message": "Hello World"}
 
 
-@app.post("/semantic-search/")
+@app.post("/semantic-search")
 async def search(query: str, categories: Optional[str]=None, year: Optional[str]=None, index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # calculate query embeddings
     response = client.embeddings.create(input=query, model='text-embedding-ada-002')
@@ -194,7 +196,7 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
     return papers_list
 
 
-@app.post("/ask-arxiv/")
+@app.post("/ask-arxiv")
 async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # redis_client.flushall()
     from ask_arxiv import rag_pipeline
@@ -252,9 +254,10 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
            }
 
 
-@app.post('/indexpaper/')
+@app.post('/indexpaper')
 async def index_paper(paperurl: str, index = Depends(get_pinecone_index)):
-
+    print("Received request data:", paperurl)
+    
     # Extract the paper ID
     paper_id = os.path.splitext(os.path.basename(paperurl))[0]
 
@@ -291,7 +294,7 @@ async def explain_question(paper_id: str, message: str, index = Depends(get_pine
     print(paper_id)
     answer = ask_questions(question=message, paper_id=paper_id, prompt=prompt_chat, index=index)
 
-    return answer
+    return {"answer":answer}
 
 
 @app.post('/podcast')
@@ -317,7 +320,8 @@ async def podcast(paperurl: str):
             job = q.enqueue(
                 create_podcast,
                 args=[paperurl],
-                timeout=366600,
+                # result_ttl=1234,
+                job_timeout=1000,
                 job_id=paper_id # use the job id while enqueuing
             )
 
