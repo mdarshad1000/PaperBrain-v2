@@ -91,9 +91,12 @@ def create_podcast(paperurl: str):
         logging.info("Not Indexed, Indexing Now ->")
         response = requests.get(paperurl)
 
-        # Check if the request was successful and download the pdf
+        
         if response.status_code == 200:
-            with open(f'ask-arxiv/{paper_id}.pdf', 'wb') as f:
+            folder_path = f'ask-arxiv/{paper_id}'
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+            with open(f'{folder_path}/{paper_id}.pdf', 'wb') as f:
                 f.write(response.content)
 
         # Split PDF into chunks
