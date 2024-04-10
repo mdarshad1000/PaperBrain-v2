@@ -1,6 +1,7 @@
 import boto3
 import os
 from dotenv import load_dotenv
+from boto3.s3.transfer import TransferConfig
 
 load_dotenv()
 
@@ -41,9 +42,11 @@ def upload_mp3_to_s3(paper_id: str):
     # Create an S3 client
     s3 = boto3.client('s3')
     local_file_path = f'podcast/{paper_id}/{paper_id}.mp3'
+    # Create a transfer configuration that uses multipart upload for files over 10MB
+    config = TransferConfig(multipart_threshold=1024**2*10)  # 10MB
     # Upload the local file to S3 with the specified key (paper_id)
     try:
-        s3.upload_file(local_file_path, bucket_name, f"{paper_id}.mp3")
+        s3.upload_file(local_file_path, bucket_name, f"{paper_id}.mp3", Config=config)
         print(f"Successfully uploaded {local_file_path} as {paper_id}.mp3 to bucket {bucket_name}")
     except Exception as e:
         print(f"Error uploading file: {e}")
@@ -71,5 +74,5 @@ def get_podcast_json_file():
     with open('pm3_files.json', 'w') as f:
         json.dump(x, f)
         
-
+# get_podcast_json_file()
 # print(get_mp3_url('1905.10543v1.mp3'))
