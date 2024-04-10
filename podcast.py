@@ -22,7 +22,10 @@ db_actions = Action(
 r = Redis()
 q = Queue(connection=r)
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    # format='%s(asctime)s - %s(levelname)s - %s(message)s'
+    )
 
 # SYSTEM_PROMPT = """
 #     You are a podcast script writer, highly skilled in generating engaging intellectual questions and answers in an 
@@ -58,12 +61,13 @@ SYSTEM_PROMPT = """
     Tone:
         Maintain a conversational yet authoritative tone. Noah and Ethan should engage the audience by discussing the paper's
         content with enthusiasm and expertise. Emma should be consulted for her two cents like the specialist she is.
+        Use conversational fillers like UM, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I mean etcetera to make the conversation more
+        natural. Also include '......' to add breaks in the dialogue
 
     Very Important Note:
         Provide output in valid JSON format having Keys NOAH1, NOAH2, ... NOAHn for Noah's dialogue where 1, 2, ... n are the dialogue number.
         Similarly, the Keys for ETHAN should be ETHAN1, ETHAN2, ..., ETHANn where 1, 2, ... n are the dialogue number.
         Lastly, the Keys for EMMA should be EMMA1, EMMA2, ... EMMAn where 1, 2, ... n are the dialogue number.
-
 
     Make sure to have a very catchy introduction and a very cool sounding conclusion (farewell to expert and audience).
     Generate 15-17 dialouges at maximum.
