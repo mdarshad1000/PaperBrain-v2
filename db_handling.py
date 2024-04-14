@@ -56,8 +56,8 @@ class Action:
 
     def get_all_users_info(self):
         query = 'SELECT * FROM "User";'
-        self.execute_query(query)
+        return self.execute_and_fetch(query)
 
     def get_user_preference(self, user_id):
         query = 'SELECT paper_category, paper_interest FROM "User" WHERE id = %s;'
-        self.execute_query(query, (user_id,))
+        return self.execute_and_fetch(query, (user_id,))
