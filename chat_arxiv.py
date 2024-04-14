@@ -60,7 +60,7 @@ def split_pdf_into_chunks(paper_id: str):
     print("Split function got paper id as", paper_id)
 
     # load the PDF
-    loader = PyPDFLoader(f"ask-arxiv/{paper_id}.pdf")
+    loader = PyPDFLoader(f"ask-arxiv/{paper_id}/{paper_id}.pdf")
 
     # split the loaded PDF
     pages = loader.load_and_split(text_splitter=text_splitter)

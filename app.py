@@ -214,7 +214,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
     # unique ID for a new question
     u_id = str(uuid.uuid4())
 
-    # Create a Directory for each question to download the top_5 papers
+    # Create a Directory for each question to download the top_3 papers
     dir_path = Path(f'ask-arxiv/{u_id}')
     dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -276,7 +276,7 @@ async def index_paper(paperurl: str, index = Depends(get_pinecone_index)):
 
         # Check if the request was successful and download the pdf
         if response.status_code == 200:
-            with open(f'ask-arxiv/{paper_id}.pdf', 'wb') as f:
+            with open(f'ask-arxiv/{paper_id}/{paper_id}.pdf', 'wb') as f:
                 f.write(response.content)
 
        # Split PDF into chunks

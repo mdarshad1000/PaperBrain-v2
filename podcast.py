@@ -181,7 +181,7 @@ def delete_intermediate_files(intermediate_files: list):
         os.remove(file)
 
 def delete_pdf(paper_id: str):
-    pdf_path = f'ask-arxiv/{paper_id}.pdf'
+    pdf_path = f'ask-arxiv/{paper_id}/{paper_id}.pdf'
     if os.path.exists(pdf_path):
         os.remove(pdf_path)
 
