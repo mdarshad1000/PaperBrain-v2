@@ -39,11 +39,15 @@ def check_podcast_exists(paper_id: str):
 
 
 def upload_mp3_to_s3(paper_id: str):
-    # Create an S3 client
-    s3 = boto3.client('s3')
+    # Check if the local file exists
     local_file_path = f'podcast/{paper_id}/{paper_id}.mp3'
+    if not os.path.exists(local_file_path):
+        print(f"File {local_file_path} does not exist.")
+        return
+
     # Create a transfer configuration that uses multipart upload for files over 10MB
     config = TransferConfig(multipart_threshold=1024**2*10)  # 10MB
+
     # Upload the local file to S3 with the specified key (paper_id)
     try:
         s3.upload_file(local_file_path, bucket_name, f"{paper_id}.mp3", Config=config)
