@@ -53,7 +53,7 @@ def start_worker_with_logging():
 
     # Start logging CPU usage in a separate thread
     cpu_logging_thread = threading.Thread(target=log_cpu_usage, args=(1,))
-    cpu_logging_thread.start()
+    # cpu_logging_thread.start()
 
     # Start logging memory usage in a separate thread
     memory_logging_thread = threading.Thread(target=log_memory_usage, args=(1,))
@@ -61,7 +61,7 @@ def start_worker_with_logging():
 
     # Start logging disk usage in a separate thread
     disk_logging_thread = threading.Thread(target=log_disk_usage, args=(1,))
-    disk_logging_thread.start()
+    # disk_logging_thread.start()
 
     # Start RQ worker
     w = Worker(['default'], connection=r)

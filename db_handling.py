@@ -1,6 +1,11 @@
 # database.py
+import logging
 from psycopg2 import pool
 from psycopg2.extras import DictCursor
+
+# Create a logger object
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class Action:
     def __init__(self, host, dbname, user, password, port):
@@ -11,6 +16,7 @@ class Action:
             password=password,
             port=port
         )
+        logger.info("Initialized connection pool")
 
     def execute_query(self, query, params=None):
         conn = self.conn_pool.getconn()
@@ -18,6 +24,7 @@ class Action:
             with conn.cursor() as cur:
                 cur.execute(query, params)
                 conn.commit()
+            logger.info("Executed query: %s", query)
         finally:
             self.conn_pool.putconn(conn)
 
@@ -27,7 +34,7 @@ class Action:
             with conn.cursor(cursor_factory=DictCursor) as cur:
                 cur.execute(query, params)
                 result = cur.fetchall()
-                print(result)
+                logger.info("Executed and fetched results for query: %s", query)
                 return [dict(row) for row in result]
         finally:
             self.conn_pool.putconn(conn)

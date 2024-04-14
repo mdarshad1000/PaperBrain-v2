@@ -23,8 +23,6 @@ import shutil
 import json
 import requests
 
-
-
 logging.basicConfig(level=logging.INFO)
 
 load_dotenv()
@@ -91,7 +89,7 @@ def create_podcast(paperurl: str):
         logging.info("Not Indexed, Indexing Now ->")
         response = requests.get(paperurl)
 
-        
+
         if response.status_code == 200:
             folder_path = f'ask-arxiv/{paper_id}'
             if not os.path.exists(folder_path):
@@ -140,7 +138,7 @@ def create_podcast(paperurl: str):
     logging.info("After Adding Paper Info %s", key_findings)
 
     response_dict = generate_script(key_findings=key_findings)
-    response_dict_json = json.dumps(response_dict)  # Convert dict to JSON string for postgres
+    response_dict_json = json.dumps(response_dict) 
 
     # Generate audio from OpenAI's Whisper
     final_audio = load_intro_music()
@@ -170,12 +168,14 @@ def create_podcast(paperurl: str):
     new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
 
     db_actions.update_podcast_status(paper_id=paper_id, status='SUCCESS')
+    logging.info("Podcast status updated to SUCCESS.")
 
     title = paper_info[0]['TITLE']
     authors = paper_info[0]['AUTHORS']
     abstract = paper_info[0]['ABSTRACT']
 
     db_actions.update_podcast_information(paper_id=paper_id, title=title, authors=authors, abstract=abstract, transcript=response_dict_json, s3_url=new_podcast_url)
+    logging.info("Podcast information updated.")
 
     return "DONE"
 
