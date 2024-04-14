@@ -54,12 +54,17 @@ class Action:
     def get_podcast_info(self, paper_id):
         query = 'SELECT * FROM "Podcast" WHERE paper_id = %s'
         result = self.execute_and_fetch(query, (paper_id, ))
-        return result
+        return result[0]
 
     def check_pending_status(self, paper_id):
         query = 'SELECT * FROM "Podcast" WHERE paper_id = %s'
         result = self.execute_and_fetch(query, (paper_id,))
         return result
+
+    def check_podcast_exists(self, paper_id):
+        query = 'SELECT * FROM "Podcast" WHERE paper_id = %s AND status = %s'
+        result = self.execute_and_fetch(query, (paper_id, "SUCCESS"))
+        return len(result) > 0
 
     def get_all_users_info(self):
         query = 'SELECT * FROM "User";'

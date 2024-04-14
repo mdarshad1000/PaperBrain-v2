@@ -303,8 +303,9 @@ async def explain_question(paper_id: str, message: str, index = Depends(get_pine
 @app.post('/podcast')
 async def podcast(paperurl: str):
     paper_id = os.path.splitext(os.path.basename(paperurl))[0]
-    podcast_exists, _ = check_podcast_exists(paper_id=paper_id)
-
+    # podcast_exists, _ = check_podcast_exists(paper_id=paper_id) # checking via s3, prone to error
+    podcast_exists = db_actions.check_podcast_exists(paper_id=paper_id) # cheking via Supabase -- more robust
+    print(podcast_exists)
     if podcast_exists:
         print("podcast exisits in s3")
         paper_info = db_actions.get_podcast_info(paper_id=paper_id)
@@ -316,7 +317,7 @@ async def podcast(paperurl: str):
     else:
         pending = db_actions.check_pending_status(paper_id=paper_id)
         print(pending)
-        if len(pending) != 0:
+        if len(pending) > 0:
             return {"message":"Job in Queue"}
 
         else:
