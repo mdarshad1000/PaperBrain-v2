@@ -167,8 +167,8 @@ def embed_and_upsert(papers, index_name, model, batch_size=90):
             batch = papers[i:i+batch_size]
             texts = [paper.embedding_text for paper in batch]
             embed_data = get_embeddings(texts, model)
-        
-            pc_data = [(p.id, e['embedding'], p.metadata)
+    
+            pc_data = [(p.id, e.embedding, p.metadata)
                        for p, e in zip(batch, embed_data)]
             index.upsert(pc_data)
 
