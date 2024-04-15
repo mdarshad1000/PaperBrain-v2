@@ -276,6 +276,7 @@ async def index_paper(paperurl: str, index = Depends(get_pinecone_index)):
 
         # Check if the request was successful and download the pdf
         if response.status_code == 200:
+            os.makedirs(f'ask-arxiv/{paper_id}', exist_ok=True)  # This will create the directory if it does not exist
             with open(f'ask-arxiv/{paper_id}/{paper_id}.pdf', 'wb') as f:
                 f.write(response.content)
 
