@@ -48,6 +48,8 @@ logging.basicConfig(
 #         Keep the discussion engaging and avoid jargon overload.
 #         Ensure that each section flows naturally into the next, maintaining a coherent narrative throughout the script.
 # """
+
+
 SYSTEM_PROMPT = """
     You are a podcast script writer, highly skilled in generating engaging intellectual questions and answers in an
     easy-to-understand podcast style.
@@ -158,12 +160,13 @@ def append_audio_segment(filename: str, final_audio):
 
 def load_and_adjust_bg_music():
     logging.info("Loading and adjusting background music...")
-    bg_music = AudioSegment.from_mp3("music_essentials/bg_music.mp3")
-    return bg_music - 30
+    bg_music = AudioSegment.from_mp3("music_essentials/bg-music-new-2.mp3")
+    return bg_music
 
 def overlay_bg_music(final_audio, bg_music):
     logging.info("Overlaying background music onto the final audio...")
-    return final_audio.overlay(bg_music, loop=True)
+    bg_music = bg_music[:len(final_audio)]
+    return final_audio.overlay(bg_music, position=7000)
 
 def add_outro(final_mix):
     logging.info("Adding outro...")
