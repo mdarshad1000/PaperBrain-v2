@@ -154,7 +154,7 @@ def create_podcast(paperurl: str):
         final_audio = append_audio_segment(filename, final_audio)
 
     bg_music = load_and_adjust_bg_music()
-    final_mix = overlay_bg_music(final_audio, bg_music)
+    # final_mix = overlay_bg_music(final_audio, bg_music)
     final_mix = add_outro(final_mix)
     export_audio(final_mix, paper_id)
     delete_intermediate_files(intermediate_files)
