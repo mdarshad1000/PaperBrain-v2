@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from utils import pinecone_connect, pinecone_retrieval, create_paper_dict, pinecone_connect_2
-from podcast import (generate_script, load_intro_music, create_directory, generate_speech, overlay_bg_music_on_final_audio,
-                     append_audio_segments, add_outro, export_audio, delete_pdf)
+from podcast import (generate_script, create_directory, generate_speech, overlay_bg_music_on_final_audio,
+                     append_audio_segments, add_intro_outro, export_audio, delete_pdf)
 from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
 # from daily_digest import fetch_papers, rank_papers
 from aws_utils import get_mp3_url, upload_mp3_to_s3, check_podcast_exists
@@ -77,7 +77,7 @@ def create_podcast(paperurl: str):
     # Initialize Pinecone index and OpenAI client here
     _, index = pinecone_connect_2()
 
-    # Extract the paper ID
+    # Extract the paper IDs
     paper_id = os.path.splitext(os.path.basename(paperurl))[0]
 
     # Check if a namespace exists in Pinecone with this pape ID
@@ -144,28 +144,25 @@ def create_podcast(paperurl: str):
     # generate JSON to insert in Database
     response_dict_json = json.dumps(response_dict) 
 
-    # Load intro music
-    intro_music = load_intro_music()
-
     # Create directory for the podcast
     create_directory(paper_id)
 
-    # Generate speech for each dialogue in the response_dict
-    audio_generator = generate_speech(response_dict)
+    # Generate speech
+    speech_segments = list(generate_speech(response_dict))
 
-    # Append intro music and audio segments on the fly
-    final_audio = intro_music + append_audio_segments(audio_generator)
+    # Append audio segments
+    final_audio = append_audio_segments(speech_segments)
 
-    # Overlay background music on the final audio
-    # final_audio = overlay_bg_music_on_final_audio(final_audio)
+    # Overlay background music on final audio
+    final_audio = overlay_bg_music_on_final_audio(final_audio)
 
-    # Add outro to the final mix
-    final_mix = add_outro(final_audio)
+    # Add outro
+    final_audio_w_outro = add_intro_outro(final_audio)
 
-    # Export the final mix to a new file
-    export_audio(final_mix, paper_id)
+    # Export audio
+    export_audio(final_audio_w_outro, paper_id)
 
-    # Delete the PDF
+    # Delete PDF
     delete_pdf(paper_id)
 
     # Upload podcast to AWS S3

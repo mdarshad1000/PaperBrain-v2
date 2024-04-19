@@ -1,6 +1,5 @@
 
 from openai import OpenAI
-from pydub import AudioSegment
 from dotenv import load_dotenv
 from db_handling import Action
 import os
@@ -10,6 +9,10 @@ import sys
 from rq import Queue
 from redis import Redis
 from io import BytesIO
+import librosa
+import soundfile as sf
+import numpy as np
+
 
 load_dotenv()
 
@@ -98,9 +101,6 @@ def generate_script(key_findings: str):
         
     return response_dict
 
-def load_intro_music():
-    logging.info("Loading intro music...")
-    return AudioSegment.from_mp3("music_essentials/intro.mp3")
 
 def create_directory(paper_id: str):
     directory_name = f"podcast/{paper_id}"
@@ -108,45 +108,57 @@ def create_directory(paper_id: str):
         os.makedirs(directory_name)
     return directory_name
 
+
 def generate_speech(response_dict):
     for key, text in response_dict.items():
-            voice = "nova" if "EMMA" in key else "onyx" if "ETHAN" in key else "echo"
-            logging.info(f"Generating speech for {key} with voice {voice}...")
-            audio_response = clientOAI.audio.speech.create(
-                model="tts-1",
-                voice=voice,
-                input=text
-            )
-            binary_content = audio_response.read()
-            in_memory_bytes_file = BytesIO(binary_content)
+        voice = "nova" if "EMMA" in key else "onyx" if "ETHAN" in key else "echo"
+        logging.info(f"Generating speech for {key} with voice {voice}...")
+        audio_response = clientOAI.audio.speech.create(
+            model="tts-1",
+            voice=voice,
+            input=text
+        )
+        binary_content = audio_response.read()
+        in_memory_bytes_file = BytesIO(binary_content)
 
-            dialogue_segment = AudioSegment.from_file(in_memory_bytes_file, format="mp3")
-            yield dialogue_segment
+        dialogue_segment, _ = librosa.load(in_memory_bytes_file, sr=44100)
+        yield dialogue_segment
 
 def append_audio_segments(audio_generator):
-    final_audio = AudioSegment.empty()
+    final_audio = np.array([])
     for audio_segment in audio_generator:
         logging.info("Appending this audio segment to the final audio...")
-        final_audio += audio_segment
+        final_audio = np.concatenate((final_audio, audio_segment))
     return final_audio
 
 def overlay_bg_music_on_final_audio(final_audio):
     logging.info("Loading and adjusting background music...")
-    bg_music = AudioSegment.from_mp3("music_essentials/bg-music-new-2.mp3") - 10
+    bg_music, sr = librosa.load("music_essentials/bg-music-new-2.mp3", sr=44100)
 
     logging.info("Overlaying background music onto the final audio...")
-    bg_music = bg_music[:len(final_audio)]
-    return final_audio.overlay(bg_music - 10, position=7000)
+    # Ensure bg_music is not longer than final_audio
+    if len(bg_music) > len(final_audio):
+        bg_music = bg_music[:len(final_audio)]
+    else:
+        # If bg_music is shorter than final_audio, resize it to match the length
+        bg_music = np.resize(bg_music, len(final_audio))
 
-def add_outro(final_mix):
-    logging.info("Adding outro...")
-    outro_music = AudioSegment.from_mp3("music_essentials/outro.mp3")
-    clipped_outro = outro_music[-5500:]
-    return final_mix + (clipped_outro - 15)
+    bg_music = bg_music * 0.8
+    final_audio = np.minimum(final_audio + bg_music, 1.0)
+    return final_audio
+
+
+def add_intro_outro(final_mix):
+    logging.info("Adding intro...")
+    outro, _ = librosa.load("music_essentials/outro.mp3", sr=44100)
+
+    intro, _= librosa.load("music_essentials/intro.mp3", sr=44100)
+    return np.concatenate((intro, final_mix, outro))
 
 def export_audio(final_mix, paper_id: str):
     logging.info("Exporting the mixed audio to a new file...")
-    final_mix.export(f"podcast/{paper_id}/{paper_id}.mp3", format="mp3")
+    sf.write(f"podcast/{paper_id}/{paper_id}.mp3", final_mix, 44100)
+    logging.info("Finished exporting the mixed audio.")
 
 def delete_pdf(paper_id: str):
     pdf_path = f'ask-arxiv/{paper_id}/{paper_id}.pdf'
