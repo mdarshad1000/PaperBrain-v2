@@ -1,17 +1,17 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from utils import pinecone_connect, pinecone_retrieval, create_paper_dict, pinecone_connect_2
-from podcast import (generate_script, load_intro_music, create_directory, generate_speech, save_speech_to_file, append_audio_segment, 
-                     load_and_adjust_bg_music, overlay_bg_music, add_outro, export_audio, delete_intermediate_files, delete_pdf)
+from podcast import (generate_script, load_intro_music, create_directory, generate_speech, overlay_bg_music_on_final_audio,
+                     append_audio_segments, add_outro, export_audio, delete_pdf)
 from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
 # from daily_digest import fetch_papers, rank_papers
 from aws_utils import get_mp3_url, upload_mp3_to_s3, check_podcast_exists
+from db_handling import Action
 from typing import Optional
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
 from openai import OpenAI
-from db_handling import Action
 from rq import Queue
 from redis import Redis
 import logging
@@ -73,8 +73,10 @@ class AskArxivRequest(BaseModel):
     question: str
 
 def create_podcast(paperurl: str):
+
     # Initialize Pinecone index and OpenAI client here
     _, index = pinecone_connect_2()
+
     # Extract the paper ID
     paper_id = os.path.splitext(os.path.basename(paperurl))[0]
 
@@ -83,10 +85,10 @@ def create_podcast(paperurl: str):
     logging.info(flag)
 
     if flag:
-        logging.info("Already indexed")
+        logging.info("Paper found in Pinecone:  Already Indexed")
 
     else:
-        logging.info("Not Indexed, Indexing Now ->")
+        logging.info("Paper not Indexed: Indexing Now ->")
         response = requests.get(paperurl)
 
 
@@ -111,7 +113,6 @@ def create_podcast(paperurl: str):
         "What are the main STRENGTHS of this paper?",
         "What are the main LIMITATIONS of this paper?",
         "What are the main APPLICATION of this paper?",
-
     ]
 
     key_findings = [ask_questions(question=message, paper_id=paper_id, prompt=prompt_podcast, index=index) for message in messages]
@@ -122,11 +123,11 @@ def create_podcast(paperurl: str):
         paper = arxiv.Search(id_list=[paper_id]).results()
 
         paper_info = [
-            {
-                "TITLE": item.title,
-                "AUTHORS": ", ".join(author.name for author in item.authors),
-                "ABSTRACT": item.summary,
-            }
+                {
+                    "TITLE": item.title,
+                    "AUTHORS": ", ".join(author.name for author in item.authors),
+                    "ABSTRACT": item.summary,
+                }
             for item in paper
             ]
 
@@ -137,44 +138,50 @@ def create_podcast(paperurl: str):
 
     logging.info("After Adding Paper Info %s", key_findings)
 
+    # Information to generate podcast script
     response_dict = generate_script(key_findings=key_findings)
+
+    # generate JSON to insert in Database
     response_dict_json = json.dumps(response_dict) 
 
-    # Generate audio from OpenAI's Whisper
-    final_audio = load_intro_music()
-    intermediate_files = []
+    # Load intro music
+    intro_music = load_intro_music()
 
-    directory_name = create_directory(paper_id)
-    
-    for key in response_dict.keys():
-        tts_response = generate_speech(key, response_dict[key])
-        filename = f"{directory_name}/{key}.mp3"
-        save_speech_to_file(tts_response, filename)
-        intermediate_files.append(filename)
-        final_audio = append_audio_segment(filename, final_audio)
+    # Create directory for the podcast
+    create_directory(paper_id)
 
-    bg_music = load_and_adjust_bg_music()
-    final_mix = overlay_bg_music(final_audio, bg_music)
+    # Generate speech for each dialogue in the response_dict
+    audio_generator = generate_speech(response_dict)
+
+    # Append intro music and audio segments on the fly
+    final_audio = intro_music + append_audio_segments(audio_generator)
+
+    # Overlay background music on the final audio
+    final_audio = overlay_bg_music_on_final_audio(final_audio)
+
+    # Add outro to the final mix
     final_mix = add_outro(final_audio)
+
+    # Export the final mix to a new file
     export_audio(final_mix, paper_id)
-    delete_intermediate_files(intermediate_files)
+
+    # Delete the PDF
     delete_pdf(paper_id)
 
     # Upload podcast to AWS S3
     upload_mp3_to_s3(paper_id=paper_id)
 
-    os.remove(f'podcast/{paper_id}/{paper_id}.mp3')
+    shutil.rmtree(f'podcast/{paper_id}')
 
     new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
 
-    db_actions.update_podcast_status(paper_id=paper_id, status='SUCCESS')
     logging.info("Podcast status updated to SUCCESS.")
 
     title = paper_info[0]['TITLE']
     authors = paper_info[0]['AUTHORS']
     abstract = paper_info[0]['ABSTRACT']
 
-    db_actions.update_podcast_information(paper_id=paper_id, title=title, authors=authors, abstract=abstract, transcript=response_dict_json, s3_url=new_podcast_url)
+    db_actions.update_podcast_information(paper_id=paper_id, title=title, authors=authors, abstract=abstract, transcript=response_dict_json, s3_url=new_podcast_url, status='SUCCESS')
     logging.info("Podcast information updated.")
 
     return "DONE"

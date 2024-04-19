@@ -9,8 +9,11 @@ import logging
 import sys
 from rq import Queue
 from redis import Redis
+from io import BytesIO
 
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO, )
 
 db_actions = Action(
     host=os.getenv('HOST'),
@@ -19,35 +22,11 @@ db_actions = Action(
     password=os.getenv('PASSWORD'),
     port=os.getenv('PORT')
 )
+# initialize redis and openai connection
+
 r = Redis()
 q = Queue(connection=r)
-
-logging.basicConfig(
-    level=logging.INFO,
-    # format='%s(asctime)s - %s(levelname)s - %s(message)s'
-    )
-
-# SYSTEM_PROMPT = """
-#     You are a podcast script writer, highly skilled in generating engaging intellectual questions and answers in an 
-#     easy-to-understand podcast style.
-
-#     Podcasters: 
-#         The Interviewer's name is Noah Bennett, and the expert name is Ethan Sullivan. Keep in mind that Ethan is not a
-#         co-author or anyone related to the paper, he is just an Expert.
-
-#     Tone: 
-#         Maintain a conversational yet authoritative tone. Noah and Ethan should engage the audience by discussing the paper's
-#         content with enthusiasm and expertise. 
-
-#     Make sure to have a very catchy introduction and a very cool sounding conclusion (farewell to expert and audience). 
-#     Provide output in valid json having Keys 1, 2, ... n, where Odd numbers are for interviewer and Even numbers are for expert.
-#     Generate 15-17 dialouges at maximum.
-    
-#     Additional Notes:
-#         Use a blend of technical language and layman terms to make the content accessible to a wide audience.
-#         Keep the discussion engaging and avoid jargon overload.
-#         Ensure that each section flows naturally into the next, maintaining a coherent narrative throughout the script.
-# """
+clientOAI = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 
 SYSTEM_PROMPT = """
@@ -63,7 +42,7 @@ SYSTEM_PROMPT = """
     Tone:
         Maintain a conversational yet authoritative tone. Noah and Ethan should engage the audience by discussing the paper's
         content with enthusiasm and expertise. Emma should be consulted for her two cents like the specialist she is.
-        Use conversational fillers like UM, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I mean etcetera to make the conversation more
+        Use conversational fillers like Umm, Ohhh I see.., Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I mean etcetera to make the conversation more
         natural. Also include '......' to add breaks in the dialogue
 
     Very Important Note:
@@ -93,9 +72,6 @@ USER_PROMPT = """
     \n
     """
 
-clientOAI = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-
 def generate_script(key_findings: str):
     try:
         key_findings_str = ''.join(key_findings)
@@ -119,16 +95,8 @@ def generate_script(key_findings: str):
     except json.JSONDecodeError:
         logging.error("Failed to decode JSON response from OpenAI.")
         sys.exit(1)
-
-    # try:
-    #     with open('all_files.json', 'w') as f:
-    #         json.dump(response_dict, f)
-    # except IOError as e:
-    #     logging.error("Failed to write to file: %s", e)
-    #     sys.exit(1)
-
+        
     return response_dict
-
 
 def load_intro_music():
     logging.info("Loading intro music...")
@@ -140,33 +108,35 @@ def create_directory(paper_id: str):
         os.makedirs(directory_name)
     return directory_name
 
-def generate_speech(key: str, text: str):
-    voice = "nova" if "EMMA" in key else "onyx" if "ETHAN" in key else "echo"
-    logging.info(f"Generating speech for {key} with voice {voice}...")
-    return clientOAI.audio.speech.create(
-        model="tts-1",
-        voice=voice,
-        input=text
-    )
+def generate_speech(response_dict):
+    for key, text in response_dict.items():
+            voice = "nova" if "EMMA" in key else "onyx" if "ETHAN" in key else "echo"
+            logging.info(f"Generating speech for {key} with voice {voice}...")
+            audio_response = clientOAI.audio.speech.create(
+                model="tts-1",
+                voice=voice,
+                input=text
+            )
+            binary_content = audio_response.read()
+            in_memory_bytes_file = BytesIO(binary_content)
 
-def save_speech_to_file(tts_response, filename: str):
-    logging.info(f"Saving speech to {filename}...")
-    tts_response.stream_to_file(filename)
+            dialogue_segment = AudioSegment.from_file(in_memory_bytes_file, format="mp3")
+            yield dialogue_segment
 
-def append_audio_segment(filename: str, final_audio):
-    logging.info("Appending this audio segment to the final audio...")
-    segment = AudioSegment.from_mp3(filename)
-    return final_audio + segment
+def append_audio_segments(audio_generator):
+    final_audio = AudioSegment.empty()
+    for audio_segment in audio_generator:
+        logging.info("Appending this audio segment to the final audio...")
+        final_audio += audio_segment
+    return final_audio
 
-def load_and_adjust_bg_music():
+def overlay_bg_music_on_final_audio(final_audio):
     logging.info("Loading and adjusting background music...")
-    bg_music = AudioSegment.from_mp3("music_essentials/bg-music-new-2.mp3")
-    return bg_music
+    bg_music = AudioSegment.from_mp3("music_essentials/bg-music-new-2.mp3") - 10
 
-def overlay_bg_music(final_audio, bg_music):
     logging.info("Overlaying background music onto the final audio...")
     bg_music = bg_music[:len(final_audio)]
-    return final_audio.overlay(bg_music, position=7000)
+    return final_audio.overlay(bg_music - 10, position=7000)
 
 def add_outro(final_mix):
     logging.info("Adding outro...")
@@ -178,35 +148,7 @@ def export_audio(final_mix, paper_id: str):
     logging.info("Exporting the mixed audio to a new file...")
     final_mix.export(f"podcast/{paper_id}/{paper_id}.mp3", format="mp3")
 
-def delete_intermediate_files(intermediate_files: list):
-    logging.info("Deleting intermediate files...")
-    for file in intermediate_files:
-        os.remove(file)
-
 def delete_pdf(paper_id: str):
     pdf_path = f'ask-arxiv/{paper_id}/{paper_id}.pdf'
     if os.path.exists(pdf_path):
         os.remove(pdf_path)
-
-def generate_audio_whisper(response_dict: dict, paper_id: str):
-    final_audio = load_intro_music()
-    intermediate_files = []
-
-    directory_name = create_directory(paper_id)
-    
-    for key in response_dict.keys():
-        tts_response = generate_speech(key, response_dict[key])
-        filename = f"{directory_name}/{key}.mp3"
-        save_speech_to_file(tts_response, filename)
-        intermediate_files.append(filename)
-        final_audio = append_audio_segment(filename, final_audio)
-
-    bg_music = load_and_adjust_bg_music()
-    final_mix = overlay_bg_music(final_audio, bg_music)
-    final_mix = add_outro(final_mix)
-    export_audio(final_mix, paper_id)
-    delete_intermediate_files(intermediate_files)
-    delete_pdf(paper_id)
-
-    logging.info("Audio generation completed.")
-    return "DONE"
