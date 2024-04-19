@@ -154,7 +154,7 @@ def create_podcast(paperurl: str):
     final_audio = append_audio_segments(speech_segments)
 
     # Overlay background music on final audio
-    final_audio = overlay_bg_music_on_final_audio(final_audio)
+    # final_audio = overlay_bg_music_on_final_audio(final_audio)
 
     # Add outro
     final_audio_w_outro = add_intro_outro(final_audio)

@@ -44,9 +44,9 @@ SYSTEM_PROMPT = """
 
     Tone:
         Maintain a conversational yet authoritative tone. Noah and Ethan should engage the audience by discussing the paper's
-        content with enthusiasm and expertise. Emma should be consulted for her two cents like the specialist she is.
-        Use conversational fillers like Umm, Ohhh I see.., Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I mean etcetera to make the conversation more
-        natural. Also include '......' to add breaks in the dialogue
+        content with enthusiasm and expertise. Emma should be consulted to enlighten the conversation with her two cents .
+        Use conversational fillers like Umm, Ohhh I see, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I mean, etcetera to make the conversation more
+        natural. 
 
     Very Important Note:
         Provide output in valid JSON format having Keys NOAH1, NOAH2, ... NOAHn for Noah's dialogue where 1, 2, ... n are the dialogue number.
@@ -116,7 +116,7 @@ def generate_speech(response_dict):
         audio_response = clientOAI.audio.speech.create(
             model="tts-1",
             voice=voice,
-            input=text
+            input=text,
         )
         binary_content = audio_response.read()
         in_memory_bytes_file = BytesIO(binary_content)
@@ -143,7 +143,7 @@ def overlay_bg_music_on_final_audio(final_audio):
         # If bg_music is shorter than final_audio, resize it to match the length
         bg_music = np.resize(bg_music, len(final_audio))
 
-    bg_music = bg_music * 0.8
+    bg_music = bg_music * 0.1
     final_audio = np.minimum(final_audio + bg_music, 1.0)
     return final_audio
 
@@ -164,3 +164,11 @@ def delete_pdf(paper_id: str):
     pdf_path = f'ask-arxiv/{paper_id}/{paper_id}.pdf'
     if os.path.exists(pdf_path):
         os.remove(pdf_path)
+
+
+# x = {"EMMA":""}
+# y = generate_speech(x)
+
+# f = append_audio_segments(y)
+
+# export_audio(f, 'try')
