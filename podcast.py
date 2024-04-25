@@ -43,7 +43,7 @@ SYSTEM_PROMPT = """
         She should have a minimum 2 and maximum of 3 dialogues. Include Emma in the conversation in a very smooth and intelligent way.
 
     Tone:
-        Maintain a conversational yet authoritative tone. Noah and Ethan should engage the audience by discussing the paper's
+        Maintain a conversational yet authoritative tone. The conversation should also contain short dialogues back-and-forth. Noah and Ethan should engage the audience by discussing the paper's
         content with enthusiasm and expertise. Emma should be consulted to enlighten the conversation with her two cents .
         Use conversational fillers like Umm, Ohhh I see, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I mean, etcetera to make the conversation more
         natural. 
@@ -74,6 +74,10 @@ USER_PROMPT = """
     CONTEXT:
     \n
     """
+
+
+def generate_key_findings():
+    pass
 
 def generate_script(key_findings: str):
     try:
@@ -122,13 +126,17 @@ def generate_speech(response_dict):
         in_memory_bytes_file = BytesIO(binary_content)
 
         dialogue_segment, _ = librosa.load(in_memory_bytes_file, sr=44100)
+        # Delete to free up space
+        del binary_content
+        del in_memory_bytes_file
         yield dialogue_segment
 
 def append_audio_segments(audio_generator):
-    final_audio = np.array([])
+    audio_segments = []
     for audio_segment in audio_generator:
         logging.info("Appending this audio segment to the final audio...")
-        final_audio = np.concatenate((final_audio, audio_segment))
+        audio_segments.append(audio_segment)
+    final_audio = np.concatenate(audio_segments)
     return final_audio
 
 def overlay_bg_music_on_final_audio(final_audio):
@@ -143,7 +151,7 @@ def overlay_bg_music_on_final_audio(final_audio):
         # If bg_music is shorter than final_audio, resize it to match the length
         bg_music = np.resize(bg_music, len(final_audio))
 
-    bg_music = bg_music * 0.1
+    bg_music = bg_music * 0.47
     final_audio = np.minimum(final_audio + bg_music, 1.0)
     return final_audio
 
@@ -164,11 +172,3 @@ def delete_pdf(paper_id: str):
     pdf_path = f'ask-arxiv/{paper_id}/{paper_id}.pdf'
     if os.path.exists(pdf_path):
         os.remove(pdf_path)
-
-
-# x = {"EMMA":""}
-# y = generate_speech(x)
-
-# f = append_audio_segments(y)
-
-# export_audio(f, 'try')

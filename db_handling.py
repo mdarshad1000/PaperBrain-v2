@@ -39,9 +39,9 @@ class Action:
         finally:
             self.conn_pool.putconn(conn)
 
-    def update_podcast_information(self, paper_id, title, authors, abstract, transcript, s3_url, status):
-        query = 'UPDATE "Podcast" SET title = %s, authors = %s, abstract = %s, transcript = %s, s3_url = %s, status = %s WHERE paper_id = %s'
-        self.execute_query(query, (title, authors, abstract, transcript, s3_url, status, paper_id))
+    def update_podcast_information(self, paper_id, title, authors, abstract, transcript, keyinsights, s3_url, status):
+        query = 'UPDATE "Podcast" SET title = %s, authors = %s, abstract = %s, transcript = %s, keyinsights = %s, s3_url = %s, status = %s WHERE paper_id = %s'
+        self.execute_query(query, (title, authors, abstract, transcript, keyinsights, s3_url, status, paper_id))
 
     def add_new_podcast(self, paper_id, status):
         query = f'INSERT INTO "Podcast" (paper_id, status) VALUES (%s, %s)'
@@ -68,4 +68,22 @@ class Action:
 
     def get_user_preference(self, user_id):
         query = 'SELECT paper_category, paper_interest FROM "User" WHERE id = %s;'
-        return self.execute_and_fetch(query, (user_id,))
+        return self.execute_and_fetch(query, (user_id,))    
+    
+    def get_all_podcasts(self):
+        query = 'SELECT title, paper_id, abstract, s3_url, authors FROM "Podcast";'
+        results = self.execute_and_fetch(query)
+        podcasts = []
+        for result in results:
+            podcast = {
+                "title": result['title'],
+                "id": "https://arxiv.org/pdf/" + result['paper_id'] + ".pdf",
+                "summary": result['abstract'],
+                "url": result['s3_url'],
+                "authors": result['authors'],
+                "image": "https://picsum.photos/200/300",  # static image URL
+            }
+            podcasts.append(podcast)
+        return podcasts
+
+

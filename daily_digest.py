@@ -36,7 +36,7 @@ def fetch_papers(categories: list):
                     papers_data.append(paper_data)
 
             # Write the papers_data to a new JSON file
-            with open(f'daily_papers/{category}.json.json', 'w') as json_file:
+            with open(f'daily_papers/{category}.json', 'w') as json_file:
                 json.dump(papers_data, json_file, indent=4)
 
         return 

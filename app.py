@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils import pinecone_connect, pinecone_retrieval, create_paper_dict, pinecone_connect_2
 from podcast import (generate_script, create_directory, generate_speech, overlay_bg_music_on_final_audio,
                      append_audio_segments, add_intro_outro, export_audio, delete_pdf)
+from podcast_gemini import pdf_to_text, generate_key_insights
 from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
 # from daily_digest import fetch_papers, rank_papers
 from aws_utils import get_mp3_url, upload_mp3_to_s3, check_podcast_exists
@@ -19,6 +20,7 @@ import requests
 import arxiv
 import uuid
 import os
+import re
 import shutil
 import json
 import requests
@@ -38,7 +40,7 @@ db_actions = Action(
 r = Redis(
   host=os.getenv('REDIS_HOST'),
   port=os.getenv('REDIS_PORT'),
-  password=os.getenv('REDIS_PASSWORD')
+#   password=os.getenv('REDIS_PASSWORD')
 )
 
 q = Queue(connection=r)
@@ -132,7 +134,6 @@ def create_podcast(paperurl: str):
             ]
 
         key_findings.insert(0, str(paper_info))
-
     except Exception:
         pass
 
@@ -154,7 +155,7 @@ def create_podcast(paperurl: str):
     final_audio = append_audio_segments(speech_segments)
 
     # Overlay background music on final audio
-    # final_audio = overlay_bg_music_on_final_audio(final_audio)
+    final_audio = overlay_bg_music_on_final_audio(final_audio)
 
     # Add outro
     final_audio_w_outro = add_intro_outro(final_audio)
@@ -172,13 +173,96 @@ def create_podcast(paperurl: str):
 
     new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
 
-    logging.info("Podcast status updated to SUCCESS.")
-
     title = paper_info[0]['TITLE']
     authors = paper_info[0]['AUTHORS']
     abstract = paper_info[0]['ABSTRACT']
 
     db_actions.update_podcast_information(paper_id=paper_id, title=title, authors=authors, abstract=abstract, transcript=response_dict_json, s3_url=new_podcast_url, status='SUCCESS')
+    logging.info("Podcast information updated.")
+
+    return "DONE"
+
+
+def create_podcast_gemini(paperurl: str):
+
+    # Extract the paper IDs
+    pattern = r"/pdf/(\d+\.\d+)"
+    match = re.search(pattern, paperurl)
+    if match:
+        # Extract the paper ID from the matched group
+        paper_id = match.group(1)
+        print(paper_id, "This is Paper_ID")
+    else:
+        return None
+
+    response = requests.get(paperurl)
+
+    if response.status_code == 200:
+        folder_path = f'ask-arxiv/{paper_id}'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        with open(f'{folder_path}/{paper_id}.pdf', 'wb') as f:
+            f.write(response.content)
+
+    try:
+        paper = arxiv.Search(id_list=[paper_id]).results()
+
+        paper_info = [
+                {
+                    "TITLE": item.title,
+                    "AUTHORS": ", ".join(author.name for author in item.authors),
+                    "ABSTRACT": item.summary,
+                }
+            for item in paper
+            ]
+
+    except Exception:
+        pass
+    
+    title = paper_info[0]['TITLE']
+    authors = paper_info[0]['AUTHORS']
+    abstract = paper_info[0]['ABSTRACT']
+
+    # convert pdf to text
+    research_paper_text = pdf_to_text(f'{folder_path}/{paper_id}.pdf')
+
+    # generate key insights
+    key_insights = generate_key_insights(title=title, abstract=abstract, authors=authors, research_paper_text=research_paper_text)
+    
+    response_dict = generate_script(key_findings=key_insights)
+
+    # generate JSON to insert in Database
+    response_dict_json = json.dumps(response_dict) 
+
+    # Create directory for the podcast
+    create_directory(paper_id)
+
+    # Generate speech
+    speech_segments = list(generate_speech(response_dict))
+
+    # Append audio segments
+    final_audio = append_audio_segments(speech_segments)
+
+    # Overlay background music on final audio
+    final_audio = overlay_bg_music_on_final_audio(final_audio)
+
+    # Add outro
+    final_audio_w_outro = add_intro_outro(final_audio)
+
+    # Export audio
+    export_audio(final_audio_w_outro, paper_id)
+
+    # Delete PDF
+    delete_pdf(paper_id)
+
+    # Upload podcast to AWS S3
+    upload_mp3_to_s3(paper_id=paper_id)
+
+    shutil.rmtree(f'podcast/{paper_id}')
+
+    new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
+
+    db_actions.update_podcast_information(paper_id=paper_id, title=title, authors=authors, abstract=abstract, transcript=response_dict_json, keyinsights=key_insights, s3_url=new_podcast_url, status='SUCCESS')
     logging.info("Podcast information updated.")
 
     return "DONE"
@@ -307,7 +391,15 @@ async def explain_question(paper_id: str, message: str, index = Depends(get_pine
 
 @app.post('/podcast')
 async def podcast(paperurl: str):
-    paper_id = os.path.splitext(os.path.basename(paperurl))[0]
+    # Extract the paper IDs
+    pattern = r"/pdf/(\d+\.\d+)"
+    match = re.search(pattern, paperurl)
+    if match:
+        # Extract the paper ID from the matched group
+        paper_id = match.group(1)
+        print(paper_id, "This is Paper_ID")
+    else:
+        return None
     # podcast_exists, _ = check_podcast_exists(paper_id=paper_id) # checking via s3, prone to error
     podcast_exists = db_actions.check_podcast_exists(paper_id=paper_id) # cheking via Supabase -- more robust
     print(podcast_exists)
@@ -327,7 +419,8 @@ async def podcast(paperurl: str):
 
         else:
             job = q.enqueue(
-                create_podcast,
+                # create_podcast,
+                create_podcast_gemini,
                 args=[paperurl],
                 # result_ttl=1234,
                 job_timeout=1000,
