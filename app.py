@@ -1,29 +1,37 @@
-from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from utils import pinecone_connect, pinecone_retrieval, create_paper_dict, pinecone_connect_2
-from podcast import (generate_script, create_directory, generate_speech, overlay_bg_music_on_final_audio,
-                     append_audio_segments, add_intro_outro, export_audio, delete_pdf)
-from podcast_gemini import pdf_to_text, generate_key_insights
-from chat_arxiv import check_namespace_exists, split_pdf_into_chunks, embed_and_upsert, ask_questions, prompt_chat, prompt_podcast
-# from daily_digest import fetch_papers, rank_papers
-from aws_utils import get_mp3_url, upload_mp3_to_s3, check_podcast_exists
-from db_handling import Action
-from typing import Optional
-from pydantic import BaseModel
-from dotenv import load_dotenv
-from pathlib import Path
-from openai import OpenAI
-from rq import Queue
-from redis import Redis
+# Standard library imports
+import json
 import logging
-import requests
-import arxiv
-import uuid
 import os
 import re
+import secrets
 import shutil
-import json
+import uuid
+from pathlib import Path
+from typing import Optional
+
+# Third party imports
+import arxiv
 import requests
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from openai import OpenAI
+from pydantic import BaseModel
+from redis import Redis
+from rq import Queue
+
+# Local imports
+from aws_utils import get_mp3_url, upload_mp3_to_s3
+from chat_arxiv import (ask_questions, check_namespace_exists, embed_and_upsert, 
+                        prompt_chat, prompt_podcast, split_pdf_into_chunks)
+from db_handling import Action
+from podcast import (add_intro_outro, append_audio_segments, create_directory, 
+                     export_audio, generate_script, generate_speech, 
+                     overlay_bg_music_on_final_audio)
+from podcast_gemini import generate_key_insights, pdf_to_text
+from utils import create_paper_dict, pinecone_connect, pinecone_connect_2, pinecone_retrieval
 
 logging.basicConfig(level=logging.INFO)
 
@@ -40,13 +48,36 @@ db_actions = Action(
 r = Redis(
   host=os.getenv('REDIS_HOST'),
   port=os.getenv('REDIS_PORT'),
-#   password=os.getenv('REDIS_PASSWORD')
+  password=os.getenv('REDIS_PASSWORD')
 )
 
 q = Queue(connection=r)
 
 # initialise fastapi app
-app = FastAPI()
+app = FastAPI(
+    title="PaperBrain",
+    docs_url=None
+    )
+
+security = HTTPBasic()
+
+
+def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, os.getenv('FASTAPI_USERNAME'))
+    correct_password = secrets.compare_digest(credentials.password, os.getenv('FASTAPI_PASSWORD'))
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+
+@app.get("/docs", include_in_schema=False)
+async def get_swagger_documentation(username: str = Depends(get_current_username)):
+    return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
+
 
 # Enable CORS for all origins
 app.add_middleware(
@@ -75,6 +106,9 @@ class AskArxivRequest(BaseModel):
     question: str
 
 def create_podcast(paperurl: str):
+    '''
+    Creates Podcast using RAG from Pinecone + Script Generation from GPT-4 + TTS w Whisper
+    '''
 
     # Initialize Pinecone index and OpenAI client here
     _, index = pinecone_connect_2()
@@ -163,12 +197,11 @@ def create_podcast(paperurl: str):
     # Export audio
     export_audio(final_audio_w_outro, paper_id)
 
-    # Delete PDF
-    delete_pdf(paper_id)
-
     # Upload podcast to AWS S3
     upload_mp3_to_s3(paper_id=paper_id)
 
+    # Delete PDF and Podcast
+    shutil.rmtree(f'ask-arxiv/{paper_id}')
     shutil.rmtree(f'podcast/{paper_id}')
 
     new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
@@ -184,7 +217,9 @@ def create_podcast(paperurl: str):
 
 
 def create_podcast_gemini(paperurl: str):
-
+    '''
+    Creates Podcast using Info Extractions using Gemini Pro + Script Generation from GPT-4 + TTS w Whisper
+    '''
     # Extract the paper IDs
     pattern = r"/pdf/(\d+\.\d+)"
     match = re.search(pattern, paperurl)
@@ -227,9 +262,9 @@ def create_podcast_gemini(paperurl: str):
     research_paper_text = pdf_to_text(f'{folder_path}/{paper_id}.pdf')
 
     # generate key insights
-    key_insights = generate_key_insights(title=title, abstract=abstract, authors=authors, research_paper_text=research_paper_text)
+    key_insights = generate_key_insights(research_paper_text=research_paper_text)
     
-    response_dict = generate_script(key_findings=key_insights)
+    response_dict = generate_script(title=title, abstract=abstract, authors=authors, key_findings=key_insights)
 
     # generate JSON to insert in Database
     response_dict_json = json.dumps(response_dict) 
@@ -252,12 +287,13 @@ def create_podcast_gemini(paperurl: str):
     # Export audio
     export_audio(final_audio_w_outro, paper_id)
 
-    # Delete PDF
-    delete_pdf(paper_id)
+
 
     # Upload podcast to AWS S3
     upload_mp3_to_s3(paper_id=paper_id)
 
+    # Delete PDF and Podcast
+    shutil.rmtree(f'ask-arxiv/{paper_id}')
     shutil.rmtree(f'podcast/{paper_id}')
 
     new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
@@ -375,6 +411,8 @@ async def index_paper(paperurl: str, index = Depends(get_pinecone_index)):
         # Create embeddings and upsert to Pinecone
         embed_and_upsert(paper_id=paper_id, texts=texts,
                             metadatas=metadatas, index=index)
+        
+    shutil.rmtree(f'ask-arxiv/{paper_id}')
 
     return {"paper_id": paper_id}
 
@@ -419,7 +457,7 @@ async def podcast(paperurl: str):
 
         else:
             job = q.enqueue(
-                # create_podcast,
+                # create_podcast, 
                 create_podcast_gemini,
                 args=[paperurl],
                 # result_ttl=1234,

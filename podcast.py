@@ -71,6 +71,7 @@ USER_PROMPT = """
     in the introduction.
 
     \n\n
+    
     CONTEXT:
     \n
     """
@@ -79,16 +80,15 @@ USER_PROMPT = """
 def generate_key_findings():
     pass
 
-def generate_script(key_findings: str):
+def generate_script(title, abstract, authors, key_findings):
     try:
-        key_findings_str = ''.join(key_findings)
         logging.info("Sending request to OpenAI...")
         completion = clientOAI.chat.completions.create(
             model="gpt-4-1106-preview",
             response_format={"type":"json_object"},
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": USER_PROMPT + key_findings_str}
+                {"role": "user", "content": USER_PROMPT + title + abstract + authors + key_findings}
             ]
         )
     except Exception as e:
@@ -168,7 +168,3 @@ def export_audio(final_mix, paper_id: str):
     sf.write(f"podcast/{paper_id}/{paper_id}.mp3", final_mix, 44100)
     logging.info("Finished exporting the mixed audio.")
 
-def delete_pdf(paper_id: str):
-    pdf_path = f'ask-arxiv/{paper_id}/{paper_id}.pdf'
-    if os.path.exists(pdf_path):
-        os.remove(pdf_path)

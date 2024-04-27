@@ -1,7 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 import os
-import json  # Import the json module
+import json
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
         
 
 def fetch_papers(categories: list):
@@ -9,7 +13,7 @@ def fetch_papers(categories: list):
 
     for category in categories:
         if os.path.exists(f'daily_papers/{category}.json'):
-            return
+            continue
              
         else:
             # Define the URL for each category
@@ -39,11 +43,144 @@ def fetch_papers(categories: list):
             with open(f'daily_papers/{category}.json', 'w') as json_file:
                 json.dump(papers_data, json_file, indent=4)
 
-        return 
 
 
-def ranking_step_one(categories: list):
-    pass
+def recommend_papers(categories, interests):
+
+    all_papers = []
+
+    for category in categories:
+        with open(f'daily_papers/{category}.json', 'r') as f:
+            papers = json.load(f)
+            all_papers.extend(papers)
+            
+    all_papers_json_str = json.dumps(all_papers)
+
+    genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+
+    # Set up the model
+    generation_config = {
+        "temperature": .2,
+        "top_p": 0.95,
+        "top_k": 0,
+        "max_output_tokens": 15000,
+        "response_mime_type": "application/json",
+        }
+    safety_settings = [
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+    ]
+
+
+    system_instruction = """
+                        TASK:
+                            You are an expert research assistant who is skilled in recommending research papers based on USER's resarch interest.
+                            You will be provided with a JSON of Research Papers as well as USER's INTERESTS. Go through each research paper and
+                            compare if it is relvant to USER's research interest.
+                            Give a relevancy score on a scale of 1-10 based on how relevant the paper is for the USER.
+                            Give a 1-2 line short description as to why the paper is Relevant for the user.
+
+                        POINTS TO KEEP IN MIND:
+                            Your output should contain a maximum of 15 papers.
+                            Your output should contain a minimum of 3 papers.
+                            Do not recommend papers with rating below 7.
+
+                    
+                        {{INPUT FORMAT}}:
+                        
+                        [
+                            {
+                                "id": paper_id 1
+                                "title": Title of the Paper 1,
+                                "authors": Authors of the Paper 1,
+                                "subjects": Subjects/Categories 1,
+                                "abstract": Abstract of the Paper 1,
+                            },
+                            {
+                                "id": paper_id 2
+                                "title": Title of the Paper 2,
+                                "authors": Authors of the Paper 2,
+                                "subjects": Subjects/Categories 2,
+                                "abstract": Abstract of the Paper 2,
+                            },
+                            
+                            ...
+
+                            {
+                                "id": paper_id n
+                                "title": Title of the Paper n,
+                                "authors": Authors of the Paper n,
+                                "subjects": Subjects/Categories n,
+                                "abstract": Abstract of the Paper n, 
+                            }
+                        ]
+
+                        
+                        {{OUTPUT FORMAT}}:
+
+                        [
+                            {
+                                "id": paper_id 1
+                                "title": Title of the Paper 1,
+                                "authors": Authors of the Paper 1,
+                                "abstract": Abstract of the Paper 1,
+                                "relevancy score": "an integer score out of 10",
+                                "Reasons for match": "1-2 sentence short reasonings" about how it matches with USER's interest.
+                            },
+                            {
+                                "id": paper_id 2
+                                "title": Title of the Paper 2,
+                                "authors": Authors of the Paper 2,
+                                "abstract": Abstract of the Paper 2,
+                                "relevancy score": "an integer score out of 10",
+                                "Reasons for match": "1-2 sentence short reasonings" about how it matches with USER's interest.
+                            },
+                            
+                            ...
+
+                            {
+                                "id": paper_id n
+                                "title": Title of the Paper n,
+                                "authors": Authors of the Paper n,
+                                "abstract": Abstract of the Paper n,
+                                "relevancy score": "an integer score out of 10",
+                                "Reasons for match": "1-2 sentence short reasonings" about how it matches with USER's interest.
+                            },
+                        ]
+                        """
+
+
+    model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest",
+                                generation_config=generation_config,
+                                system_instruction=system_instruction,
+                                safety_settings=safety_settings)
+
+    convo = model.start_chat(history=[
+    ])
+
+    convo.send_message("""
+                            You have been asked to read a list of a few arxiv papers, each with title, authors and abstract.
+                            Based on my specific research interests, relevancy score out of 10 for each paper, based on my specific research interest, with a higher score indicating greater relevance. A relevance score more than 7 will need person's attention for details.
+                            Additionally, please generate 1-2 sentence summary for each paper explaining why it's relevant to my research interests.
+                            At least return 3 papers and at max 15.
+                            Once you have all the information, return the 
+                            "ID"
+                            "Title"
+                            "Abstract"
+                            "Authors": 
+                            "Relevancy score": "an integer score out of 10",
+                            "Reasons for match": "1-2 sentence short reasonings" about how it matches with USER's interest.
+                            
+                            INTERESTS:
+                            {interest}                        
+                                
+                            GIVEN PAPERS:
+                            {papers_list}""".format(interest=interests, papers_list=all_papers_json_str)
+    )
+    return convo.last.text
+
 
 
 def rank_papers(interest: str, papers_list: list, client):
@@ -86,6 +223,13 @@ def rank_papers(interest: str, papers_list: list, client):
     output = completion.choices[0].message.content
     return output
 
+categories = ['cs.cv']
+interests = """
+        Large language model pretraining and finetunings
+        Multimodal machine learning
+        Do not care about specific application, for example, information extraction, summarization, etc.
+        Not interested in paper focus on specific languages, e.g., Arabic, Chinese, etc.
+        """
 
-# fetch_papers(['cs.cv'])
-
+fetch_papers(categories=['cs.ai'])
+print(recommend_papers(categories=categories, interests=interests))
