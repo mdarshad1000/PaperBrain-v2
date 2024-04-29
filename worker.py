@@ -48,7 +48,7 @@ def start_worker_with_logging():
     r = Redis(
       host=os.getenv('REDIS_HOST'),
       port=os.getenv('REDIS_PORT'),
-      password=os.getenv('REDIS_PASSWORD')
+    #   password=os.getenv('REDIS_PASSWORD')
     )
 
     # Start logging CPU usage in a separate thread

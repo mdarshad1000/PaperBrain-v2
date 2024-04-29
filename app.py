@@ -48,7 +48,7 @@ db_actions = Action(
 r = Redis(
   host=os.getenv('REDIS_HOST'),
   port=os.getenv('REDIS_PORT'),
-  password=os.getenv('REDIS_PASSWORD')
+#   password=os.getenv('REDIS_PASSWORD')
 )
 
 q = Queue(connection=r)
@@ -412,7 +412,7 @@ async def index_paper(paperurl: str, index = Depends(get_pinecone_index)):
         embed_and_upsert(paper_id=paper_id, texts=texts,
                             metadatas=metadatas, index=index)
         
-    shutil.rmtree(f'ask-arxiv/{paper_id}')
+        shutil.rmtree(f'ask-arxiv/{paper_id}')
 
     return {"paper_id": paper_id}
 
