@@ -61,7 +61,6 @@ app = FastAPI(
 
 security = HTTPBasic()
 
-
 def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, os.getenv('FASTAPI_USERNAME'))
     correct_password = secrets.compare_digest(credentials.password, os.getenv('FASTAPI_PASSWORD'))
@@ -279,15 +278,12 @@ def create_podcast_gemini(paperurl: str):
     final_audio = append_audio_segments(speech_segments)
 
     # Overlay background music on final audio
-    final_audio = overlay_bg_music_on_final_audio(final_audio)
-
-    # Add outro
-    final_audio_w_outro = add_intro_outro(final_audio)
+    final_audio_with_bg = overlay_bg_music_on_final_audio(final_audio)
+    # Add outro and intro
+    final_audio_w_outro_intro = add_intro_outro(final_audio_with_bg)
 
     # Export audio
-    export_audio(final_audio_w_outro, paper_id)
-
-
+    export_audio(final_audio_w_outro_intro, paper_id)
 
     # Upload podcast to AWS S3
     upload_mp3_to_s3(paper_id=paper_id)
@@ -333,8 +329,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
     response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
     query_vector = response.data[0].embedding
 
-    top_3_papers = pinecone_retrieval(index=index, vector=query_vector, k=3)
-
+    top_4_papers = pinecone_retrieval(index=index, vector=query_vector, k=4)
     # unique ID for a new question
     u_id = str(uuid.uuid4())
 
@@ -343,8 +338,8 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
     dir_path.mkdir(parents=True, exist_ok=True)
 
     # Download the top 5 papers
-    for i in range(len(top_3_papers['matches'])):
-        ID = top_3_papers['matches'][i]['id']
+    for i in range(len(top_4_papers['matches'])):
+        ID = top_4_papers['matches'][i]['id']
         url = f"https://arxiv.org/pdf/{ID}.pdf"
         response = requests.get(url)
 
@@ -385,8 +380,15 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
 async def index_paper(paperurl: str, index = Depends(get_pinecone_index)):
     print("Received request data:", paperurl)
     
-    # Extract the paper ID
-    paper_id = os.path.splitext(os.path.basename(paperurl))[0]
+    # Extract the paper IDs
+    pattern = r"/pdf/(\d+\.\d+)"
+    match = re.search(pattern, paperurl)
+    if match:
+        # Extract the paper ID from the matched group
+        paper_id = match.group(1)
+        print(paper_id, "This is Paper_ID")
+    else:
+        return None
 
     # Check if a namespace exists in Pinecone with this paper ID
     flag = check_namespace_exists(paper_id=paper_id, index=index)

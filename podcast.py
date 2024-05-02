@@ -12,7 +12,7 @@ from io import BytesIO
 import librosa
 import soundfile as sf
 import numpy as np
-
+from pydub import AudioSegment
 
 load_dotenv()
 
@@ -125,10 +125,7 @@ def generate_speech(response_dict):
         binary_content = audio_response.read()
         in_memory_bytes_file = BytesIO(binary_content)
 
-        dialogue_segment, _ = librosa.load(in_memory_bytes_file, sr=44100)
-        # Delete to free up space
-        del binary_content
-        del in_memory_bytes_file
+        dialogue_segment = AudioSegment.from_file(in_memory_bytes_file)
         yield dialogue_segment
 
 def append_audio_segments(audio_generator):
@@ -136,35 +133,29 @@ def append_audio_segments(audio_generator):
     for audio_segment in audio_generator:
         logging.info("Appending this audio segment to the final audio...")
         audio_segments.append(audio_segment)
-    final_audio = np.concatenate(audio_segments)
+    final_audio = sum(audio_segments)
     return final_audio
 
 def overlay_bg_music_on_final_audio(final_audio):
     logging.info("Loading and adjusting background music...")
-    bg_music, sr = librosa.load("music_essentials/bg-music-new-2.mp3", sr=44100)
+    bg_music = AudioSegment.from_mp3("music_essentials/bg-music-new-2.mp3")
 
     logging.info("Overlaying background music onto the final audio...")
-    # Ensure bg_music is not longer than final_audio
-    if len(bg_music) > len(final_audio):
-        bg_music = bg_music[:len(final_audio)]
-    else:
-        # If bg_music is shorter than final_audio, resize it to match the length
-        bg_music = np.resize(bg_music, len(final_audio))
-
-    bg_music = bg_music * 0.47
-    final_audio = np.minimum(final_audio + bg_music, 1.0)
+    bg_music = bg_music[:len(final_audio)]
+    bg_music = bg_music - 6  # reduce volume by 5 dB
+    final_audio = final_audio.overlay(bg_music)
     return final_audio
 
 
 def add_intro_outro(final_mix):
     logging.info("Adding intro...")
-    outro, _ = librosa.load("music_essentials/outro.mp3", sr=44100)
+    outro = AudioSegment.from_mp3("music_essentials/outro-soft.mp3")
 
-    intro, _= librosa.load("music_essentials/intro.mp3", sr=44100)
-    return np.concatenate((intro, final_mix, outro))
+    intro = AudioSegment.from_mp3("music_essentials/intro.mp3")
+    return intro + final_mix + outro
+
 
 def export_audio(final_mix, paper_id: str):
     logging.info("Exporting the mixed audio to a new file...")
-    sf.write(f"podcast/{paper_id}/{paper_id}.mp3", final_mix, 44100)
+    final_mix.export(f"podcast/{paper_id}/{paper_id}.mp3", format="mp3")
     logging.info("Finished exporting the mixed audio.")
-
