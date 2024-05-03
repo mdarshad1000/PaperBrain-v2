@@ -5,10 +5,10 @@ JSON_FILE_PATH = "arxiv-metadata-oai-snapshot.json"
 # cs.hc, cs.ai, cs.cl, cs.ne, cs.ro, cs.lg, cs.se, cs.os, cs.db, cs.ar cs.ce, cs.cc, cs.cg, cs.cr, cs.cy, cs.dc, cs.dl, cs.dm, cs.ds, cs.et, cs.fl, cs.gl, cs.gr, cs.gt, cs.ir, cs.it, cs.lo  cs.cv(99%), econ.math,
 CATEGORIES = ["cs.ai"] 
 # NEW
-# cs.ai
-START_YEAR = 2015
-END_YEAR = 2020
-EMBED_MODEL = "text-embedding-3-small"
+# DONE - 
+START_YEAR = 2010
+END_YEAR = 2025
+EMBED_MODEL = "text-embedding-ada-002"
 PRICE_PER_1K = 0.0001
 PINECONE_INDEX_NAME='paperbrain-search'
 

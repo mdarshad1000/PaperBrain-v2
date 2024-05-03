@@ -308,7 +308,7 @@ async def home():
 @app.post("/semantic-search")
 async def search(query: str, categories: Optional[str]=None, year: Optional[str]=None, index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # calculate query embeddings
-    response = client.embeddings.create(input=query, model='text-embedding-3-small')
+    response = client.embeddings.create(input=query, model='text-embedding-ada-002')
     query_vector = response.data[0].embedding
 
     # perform semantic search over PineconeDB
@@ -326,7 +326,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
 
     index = get_pinecone_index()
     # calculate query embeddings
-    response = client.embeddings.create(input=request.question, model='text-embedding-3-small')
+    response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
     query_vector = response.data[0].embedding
 
     top_4_papers = pinecone_retrieval(index=index, vector=query_vector, k=4)

@@ -129,7 +129,7 @@ def estimate_embedding_price(papers, price_per_1k):
     return num_tokens, price
 
 
-def get_embeddings(texts, model="text-embedding-3-small"):
+def get_embeddings(texts, model="text-embedding-ada-002"):
     """
     Returns a list of embeddings for each string in `texts` using the OpenAI
     embedding model specified in `model`.
