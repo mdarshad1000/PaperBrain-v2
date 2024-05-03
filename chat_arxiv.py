@@ -13,6 +13,7 @@ import itertools
 import os
 import json
 
+
 load_dotenv()
 
 PROMPT_TEMPLATE = """
@@ -152,8 +153,7 @@ def ask_questions(question: str, paper_id: int, prompt: str, index):
 
 def check_namespace_exists(paper_id, index):
     return paper_id in index.describe_index_stats().namespaces
-
+    
 
 def delete_namespace(index, namespace):
     delete_response = index.delete(delete_all=True, namespace=namespace)
-

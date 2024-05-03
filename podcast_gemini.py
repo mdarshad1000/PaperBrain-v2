@@ -32,8 +32,8 @@ def pdf_to_text(pdf_file):
             token, '(' + token.strip('<>').lower() + ')')
 
     logging.info('Finished reading PDF file')
-    with open('output.txt', 'w') as output_file:
-        output_file.write(full_text)
+    # with open('output.txt', 'w') as output_file:
+    #     output_file.write(full_text)
     return full_text
 
 

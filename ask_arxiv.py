@@ -3,12 +3,10 @@ from llama_index.llms.openai import OpenAI
 
 def rag_pipeline(u_id: str, question: str):
     reader = SimpleDirectoryReader(f"ask-arxiv/{u_id}")
-    llm = OpenAI()
+    llm = OpenAI(temperature=0,)
     data = reader.load_data()
     index = VectorStoreIndex.from_documents(data)
     chat_engine = index.as_chat_engine(chat_mode="best", llm=llm, verbose=True)
-
-
 
     chat_engine = index.as_chat_engine(
         chat_mode="context",

@@ -228,7 +228,7 @@ def create_podcast_gemini(paperurl: str):
         print(paper_id, "This is Paper_ID")
     else:
         return None
-
+    
     response = requests.get(paperurl)
 
     if response.status_code == 200:
@@ -308,7 +308,7 @@ async def home():
 @app.post("/semantic-search")
 async def search(query: str, categories: Optional[str]=None, year: Optional[str]=None, index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # calculate query embeddings
-    response = client.embeddings.create(input=query, model='text-embedding-ada-002')
+    response = client.embeddings.create(input=query, model='text-embedding-3-small')
     query_vector = response.data[0].embedding
 
     # perform semantic search over PineconeDB
@@ -326,7 +326,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
 
     index = get_pinecone_index()
     # calculate query embeddings
-    response = client.embeddings.create(input=request.question, model='text-embedding-ada-002')
+    response = client.embeddings.create(input=request.question, model='text-embedding-3-small')
     query_vector = response.data[0].embedding
 
     top_4_papers = pinecone_retrieval(index=index, vector=query_vector, k=4)
@@ -377,7 +377,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
 
 
 @app.post('/indexpaper')
-async def index_paper(paperurl: str, index = Depends(get_pinecone_index)):
+async def index_paper(paperurl: str, index = Depends(get_pinecone_index_2)):
     print("Received request data:", paperurl)
     
     # Extract the paper IDs
@@ -421,12 +421,18 @@ async def index_paper(paperurl: str, index = Depends(get_pinecone_index)):
 
 # Chat with arxiv paper
 @app.post('/explain-new')
-async def explain_question(paper_id: str, message: str, index = Depends(get_pinecone_index)):
+async def explain_question(paper_id: str, message: str, index = Depends(get_pinecone_index_2)):
     print(index)
     print(paper_id)
     answer = ask_questions(question=message, paper_id=paper_id, prompt=prompt_chat, index=index)
 
     return {"answer":answer}
+
+def handle_job_failure(job):
+    # job_id is the same as paper_id in your case
+    job_id = job.get_id()
+    print(job_id)
+    db_actions.delete_podcast(paper_id=job_id)
 
 
 @app.post('/podcast')
@@ -464,7 +470,8 @@ async def podcast(paperurl: str):
                 args=[paperurl],
                 # result_ttl=1234,
                 job_timeout=1000,
-                job_id=paper_id # use the job id while enqueuing
+                job_id=paper_id, # use the job id while enqueuing
+                failure_callback=handle_job_failure,
             )
 
             db_actions.add_new_podcast(paper_id=paper_id, status='PENDING')

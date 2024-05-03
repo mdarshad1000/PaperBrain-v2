@@ -62,6 +62,10 @@ class Action:
         result = self.execute_and_fetch(query, (paper_id, "SUCCESS"))
         return len(result) > 0
 
+    def delete_podcast(self, paper_id):
+        query = 'DELETE FROM "Podcast" WHERE paper_id = %s'
+        self.execute_query(query, (paper_id,))
+
     def get_all_users_info(self):
         query = 'SELECT * FROM "User";'
         return self.execute_and_fetch(query)
