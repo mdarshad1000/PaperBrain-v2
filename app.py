@@ -232,7 +232,7 @@ def create_podcast_gemini(paperurl: str):
     response = requests.get(paperurl)
 
     if response.status_code == 200:
-        folder_path = f'ask-arxiv/{paper_id}'
+        folder_path = f'static/ask-arxiv/{paper_id}'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         with open(f'{folder_path}/{paper_id}.pdf', 'wb') as f:
@@ -289,8 +289,8 @@ def create_podcast_gemini(paperurl: str):
     upload_mp3_to_s3(paper_id=paper_id)
 
     # Delete PDF and Podcast
-    shutil.rmtree(f'ask-arxiv/{paper_id}')
-    shutil.rmtree(f'podcast/{paper_id}')
+    shutil.rmtree(f'static/ask-arxiv/{paper_id}')
+    shutil.rmtree(f'static/podcast/{paper_id}')
 
     new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
 
@@ -320,7 +320,7 @@ async def search(query: str, categories: Optional[str]=None, year: Optional[str]
 
 
 @app.post("/ask-arxiv")
-async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
+async def ask(request: AskArxivRequest, index = Depends(get_pinecone_index), client: OpenAI = Depends(get_openai_client)):
     # redis_client.flushall()
     from ask_arxiv import rag_pipeline
 
@@ -334,7 +334,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
     u_id = str(uuid.uuid4())
 
     # Create a Directory for each question to download the top_3 papers
-    dir_path = Path(f'ask-arxiv/{u_id}')
+    dir_path = Path(f'static/ask-arxiv/{u_id}')
     dir_path.mkdir(parents=True, exist_ok=True)
 
     # Download the top 5 papers
@@ -368,7 +368,7 @@ async def ask(request: AskArxivRequest,  index = Depends(get_pinecone_index), cl
         for paper in papers
     ]
 
-    shutil.rmtree(f'ask-arxiv/{u_id}')
+    shutil.rmtree(f'static/ask-arxiv/{u_id}')
 
     return {
             "answer": response.response,
@@ -402,8 +402,8 @@ async def index_paper(paperurl: str, index = Depends(get_pinecone_index_2)):
 
         # Check if the request was successful and download the pdf
         if response.status_code == 200:
-            os.makedirs(f'ask-arxiv/{paper_id}', exist_ok=True)  # This will create the directory if it does not exist
-            with open(f'ask-arxiv/{paper_id}/{paper_id}.pdf', 'wb') as f:
+            os.makedirs(f'static/ask-arxiv/{paper_id}', exist_ok=True)  # This will create the directory if it does not exist
+            with open(f'static/ask-arxiv/{paper_id}/{paper_id}.pdf', 'wb') as f:
                 f.write(response.content)
 
        # Split PDF into chunks
@@ -436,34 +436,36 @@ def handle_job_failure(job):
 
 
 @app.post('/podcast')
-async def podcast(paperurl: str):
+async def podcast(paperurl: str, userid: str):
+    i_d = str(uuid.uuid4())
     # Extract the paper IDs
     pattern = r"/pdf/(\d+\.\d+)"
     match = re.search(pattern, paperurl)
     if match:
-        # Extract the paper ID from the matched group
         paper_id = match.group(1)
-        print(paper_id, "This is Paper_ID")
     else:
         return None
+    print(type(paper_id))
     # podcast_exists, _ = check_podcast_exists(paper_id=paper_id) # checking via s3, prone to error
     podcast_exists = db_actions.check_podcast_exists(paper_id=paper_id) # cheking via Supabase -- more robust
-    print(podcast_exists)
     if podcast_exists:
-        print("podcast exisits in s3")
+        db_actions.update_user_podcast(i_d=i_d, userId=userid, podcastId=paper_id)
         paper_info = db_actions.get_podcast_info(paper_id=paper_id)
-
         return {
-            "flag": True,
+            "flag": 0,
             "data":paper_info
-            }
+        }
     else:
         pending = db_actions.check_pending_status(paper_id=paper_id)
-        print(pending)
+        db_actions.update_user_podcast(i_d=i_d, userId=userid, podcastId=paper_id)
         if len(pending) > 0:
-            return {"message":"Job in Queue"}
+            return {
+                "flag": 1,
+                "data":"Job in Queue"
+            }
 
         else:
+
             job = q.enqueue(
                 # create_podcast, 
                 create_podcast_gemini,
@@ -473,12 +475,11 @@ async def podcast(paperurl: str):
                 job_id=paper_id, # use the job id while enqueuing
                 failure_callback=handle_job_failure,
             )
-
+            db_actions.update_user_podcast(i_d=i_d, userId=userid, podcastId=paper_id)
             db_actions.add_new_podcast(paper_id=paper_id, status='PENDING')
-
             return { 
-                "flag": False,
-                "job_id":paper_id
+                "flag": 2,
+                "data":paper_id
             }
 
 
@@ -510,4 +511,3 @@ async def podcast(paperurl: str):
 #         redis_client.setex(cache_key, 24*3600, json.dumps(response_json))
 
 #         return response_json
-

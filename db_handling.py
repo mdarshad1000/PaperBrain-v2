@@ -44,8 +44,12 @@ class Action:
         self.execute_query(query, (title, authors, abstract, transcript, keyinsights, s3_url, status, paper_id))
 
     def add_new_podcast(self, paper_id, status):
-        query = f'INSERT INTO "Podcast" (paper_id, status) VALUES (%s, %s)'
+        query = 'INSERT INTO "Podcast" (paper_id, status) VALUES (%s, %s)'
         self.execute_query(query, (paper_id, status))
+
+    def update_user_podcast(self, i_d, userId, podcastId):
+        query = 'INSERT INTO "UserPodcast" (id, "userId", "podcastId") VALUES (%s, %s, %s)'
+        self.execute_query(query, (i_d, userId, podcastId))
 
     def get_podcast_info(self, paper_id):
         query = 'SELECT * FROM "Podcast" WHERE paper_id = %s'
