@@ -414,7 +414,7 @@ async def index_paper(paperurl: str, index = Depends(get_pinecone_index_2)):
         embed_and_upsert(paper_id=paper_id, texts=texts,
                             metadatas=metadatas, index=index)
         
-        shutil.rmtree(f'ask-arxiv/{paper_id}')
+        shutil.rmtree(f'static/ask-arxiv/{paper_id}')
 
     return {"paper_id": paper_id}
 
@@ -445,7 +445,7 @@ async def podcast(paperurl: str, userid: str):
         paper_id = match.group(1)
     else:
         return None
-    print(type(paper_id))
+
     # podcast_exists, _ = check_podcast_exists(paper_id=paper_id) # checking via s3, prone to error
     podcast_exists = db_actions.check_podcast_exists(paper_id=paper_id) # cheking via Supabase -- more robust
     if podcast_exists:
