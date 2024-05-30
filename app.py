@@ -460,7 +460,7 @@ async def podcast(paperurl: str, userid: str):
     else:
         pending = db_actions.check_pending_status(paper_id=paper_id)
         if len(pending) > 0:
-            if db_actions.check_user_podcast_relation(userId=userid, podcast_id=paper_id):
+            if not db_actions.check_user_podcast_relation(userId=userid, podcast_id=paper_id):
                 db_actions.update_user_podcast(i_d=i_d, userId=userid, podcastId=paper_id)
             return {
                 "flag": 1,
