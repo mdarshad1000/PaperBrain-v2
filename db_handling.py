@@ -47,6 +47,11 @@ class Action:
         query = 'INSERT INTO "Podcast" (paper_id, status) VALUES (%s, %s)'
         self.execute_query(query, (paper_id, status))
 
+    def check_user_podcast_relation(self, userId, podcast_id):
+        query = 'SELECT * FROM "UserPodcast" WHERE "userId" = %s AND "podcastId" = %s'
+        result = self.execute_and_fetch(query, (userId, podcast_id))
+        return len(result) > 0
+    
     def update_user_podcast(self, i_d, userId, podcastId):
         query = 'INSERT INTO "UserPodcast" (id, "userId", "podcastId") VALUES (%s, %s, %s)'
         self.execute_query(query, (i_d, userId, podcastId))

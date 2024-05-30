@@ -289,8 +289,10 @@ def create_podcast_gemini(paperurl: str):
     upload_mp3_to_s3(paper_id=paper_id)
 
     # Delete PDF and Podcast
-    shutil.rmtree(f'static/ask-arxiv/{paper_id}')
-    shutil.rmtree(f'static/podcast/{paper_id}')
+    if os.path.exists(f'static/ask-arxiv/{paper_id}'):
+        shutil.rmtree(f'static/ask-arxiv/{paper_id}')
+    if os.path.exists(f'static/podcast/{paper_id}'):
+        shutil.rmtree(f'static/podcast/{paper_id}')
 
     new_podcast_url = get_mp3_url(f'{paper_id}.mp3')['url']
 
@@ -457,13 +459,13 @@ async def podcast(paperurl: str, userid: str):
         }
     else:
         pending = db_actions.check_pending_status(paper_id=paper_id)
-        db_actions.update_user_podcast(i_d=i_d, userId=userid, podcastId=paper_id)
         if len(pending) > 0:
+            if db_actions.check_user_podcast_relation(userId=userid, podcast_id=paper_id):
+                db_actions.update_user_podcast(i_d=i_d, userId=userid, podcastId=paper_id)
             return {
                 "flag": 1,
                 "data":"Job in Queue"
             }
-
         else:
 
             job = q.enqueue(
