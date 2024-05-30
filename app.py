@@ -475,8 +475,8 @@ async def podcast(paperurl: str, userid: str):
                 job_id=paper_id, # use the job id while enqueuing
                 failure_callback=handle_job_failure,
             )
-            db_actions.update_user_podcast(i_d=i_d, userId=userid, podcastId=paper_id)
             db_actions.add_new_podcast(paper_id=paper_id, status='PENDING')
+            db_actions.update_user_podcast(i_d=i_d, userId=userid, podcastId=paper_id)
             return { 
                 "flag": 2,
                 "data":paper_id
