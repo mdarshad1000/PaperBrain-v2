@@ -104,7 +104,7 @@ async def ask_arxiv(
 
         # Send metadata first
         metadata = {
-            "citations": citation_mapping,
+            "citation": citation_mapping,
             "no_of_paper_analysed": no_of_paper_analysed,
         }
         yield f"{metadata}\n\n"
