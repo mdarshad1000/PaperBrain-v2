@@ -38,7 +38,7 @@ def get_cohere_client():
     return cohere.Client(os.getenv("COHERE_API_KEY"))
 
 
-@r.post("/ask-arxiv/{question}")
+@r.get("/ask-arxiv/{question}")
 async def ask_arxiv(
     question: str,
     arxiv_client: ArxivManager = Depends(get_arxiv_manager),
