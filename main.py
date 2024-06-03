@@ -60,7 +60,7 @@ else:
         allow_origins=["https://paperbrain.org", "https://paperbrainv2.vercel.app"],  
         allow_credentials=True,
         allow_methods=["*"],
-        expose_headers=[ "*"],
+        expose_headers=["*"],
     )
 
 app.include_router(semantic_router,) 

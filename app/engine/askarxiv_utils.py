@@ -71,7 +71,7 @@ def generate_response(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": query},
             {"role": "assistant", "content": str(formatted_response)},
-        ],
+        ]
     )
     response = completion.choices[0].message.content
     return response
