@@ -1,5 +1,4 @@
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends
 
 from app.engine.chat_utils import create_prompt_template, ask_questions
