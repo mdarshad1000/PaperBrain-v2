@@ -38,15 +38,15 @@ def get_cohere_client():
     return cohere.Client(os.getenv("COHERE_API_KEY"))
 
 
-@r.post("/ask-arxiv")
+@r.post("/ask-arxiv/{question}")
 async def ask_arxiv(
-    request: AskArxivRequest,
+    question: str,
     arxiv_client: ArxivManager = Depends(get_arxiv_manager),
     pinecone_client: PineconeService = Depends(get_pinecone_service),
     openai_client: OpenAIUtils = Depends(get_openai_client),
     cohere_client: cohere.Client = Depends(get_cohere_client),
 ):
-    question = request.question
+    question = question
     top_K = 10
     top_N = 7
 
