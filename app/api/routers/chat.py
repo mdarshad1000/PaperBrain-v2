@@ -25,14 +25,15 @@ def get_pinecone_service():
     environment = os.getenv('PINECONE_ENVIRONMENT_2')
     return PineconeService(api_key=api_key, index_name=index_name, environment=environment)
 
-@r.post('/explain-new')
-async def explain_question(request: ChatRequest, pinecone_service=Depends(get_pinecone_service)):
+@r.get('/explain-new')  # Changed from post to get
+async def explain_question(paper_id: str, message: str, pinecone_service=Depends(get_pinecone_service)):
 
     answer = ask_questions(
-        question=request.message,
-        paper_id=request.paper_id, 
+        question=message,  # Changed from request.message to message
+        paper_id=paper_id,  # Changed from request.paper_id to paper_id
         prompt=prompt,
         index=pinecone_service.index
     )
+    return {"answer": answer}
 
     return {"answer": answer}
