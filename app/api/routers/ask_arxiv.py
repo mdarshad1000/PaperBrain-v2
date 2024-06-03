@@ -107,7 +107,7 @@ async def ask_arxiv(
             "citations": citation_mapping,
             "no_of_paper_analysed": no_of_paper_analysed,
         }
-        yield f"citation: {metadata}\n\n"
+        yield f"{metadata}\n\n"
 
         # Then send the actual response content
         for item in response_text:
