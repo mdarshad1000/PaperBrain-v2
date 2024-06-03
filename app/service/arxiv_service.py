@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 class ArxivManager:
 
     def search(self, query=None, list_of_ids=None, max_results=10, sort_by=arxiv.SortCriterion.Relevance):
-        
+
         if list_of_ids:
             search = arxiv.Search(id_list=list_of_ids, max_results=max_results, sort_by=sort_by)
         else:
@@ -34,11 +34,11 @@ class ArxivManager:
     
     @staticmethod
     def id_from_url(paperurl):
-        return paperurl.split("/")[-1].split("v")[0]
+        return paperurl.split("/")[-1].split("v")[0].strip(".pdf")
     
     @staticmethod
     def url_from_id(paper_id):
-        return f"https://arxiv.org/pdf/{paper_id}.pdf"
+        return f"https://arxiv.org/pdf/{paper_id}"
 
 
     @classmethod
