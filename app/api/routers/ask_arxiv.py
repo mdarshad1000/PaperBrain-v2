@@ -37,7 +37,6 @@ def get_openai_client():
 def get_cohere_client():
     return cohere.Client(os.getenv("COHERE_API_KEY"))
 
-
 @r.get("/ask-arxiv/")
 async def ask_arxiv(
     question: str = None,
@@ -102,23 +101,11 @@ async def ask_arxiv(
 
     no_of_paper_analysed = len(citation_mapping)
 
-    async def generator_response(response_text, citation_mapping, no_of_paper_analysed):
+    # Prepare the final response as a JSON object
+    final_response = {
+        "response": response,
+        "citation_mapping": citation_mapping,
+        "no_of_paper_analysed": no_of_paper_analysed
+    }
 
-        # Send metadata first
-        metadata = {
-            "citation": citation_mapping,
-            "no_of_paper_analysed": no_of_paper_analysed,
-        }
-        yield f"{metadata}\n\n"
-
-        # Then send the actual response content
-        for item in response_text:
-            yield item
-            await asyncio.sleep(0.001) # Introducing a small wait time
-
-    response_text = str(response) # Ensure response is a string
-
-    return StreamingResponse(
-        generator_response(response_text, citation_mapping, no_of_paper_analysed),
-        media_type="text/event-stream",
-    )
+    return final_response
