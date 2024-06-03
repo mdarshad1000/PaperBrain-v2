@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
+from app.api.routers.metadata import metadata_router
 from app.api.routers.semantic_search import semantic_router
 from app.api.routers.index_paper import index_paper_router
 from app.api.routers.ask_arxiv import askarxiv_router
@@ -67,6 +68,7 @@ app.include_router(index_paper_router,)
 app.include_router(podcast_router,) 
 app.include_router(askarxiv_router,) 
 app.include_router(chat_router,) 
+app.include_router(metadata_router,)
 
 
 if __name__ == "__main__":
