@@ -1,12 +1,10 @@
 import os
-import asyncio
 import re
 import cohere
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from collections import OrderedDict
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
 
 from config import ASK_SYSTEM_PROMPT
 from app.service.arxiv_service import ArxivManager
@@ -37,7 +35,7 @@ def get_openai_client():
 def get_cohere_client():
     return cohere.Client(os.getenv("COHERE_API_KEY"))
 
-@r.get("/ask-arxiv/")
+@r.post("/ask-arxiv")
 async def ask_arxiv(
     question: str = None,
     arxiv_client: ArxivManager = Depends(get_arxiv_manager),
