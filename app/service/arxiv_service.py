@@ -74,10 +74,12 @@ class ArxivManager:
         pdf_contents = "".join(page_txts)
 
         if exclude_references:
-            # TODO: use LLM to classify each "reference" occurence by showing surrounding text
-            # find last occurence of 'references' incase the paper content mentions it before the heading
-            idx = pdf_contents.lower().rindex("reference")
-            pdf_contents = pdf_contents[:idx]
+            # find last occurrence of 'references' in case the paper content mentions it before the heading
+            try:
+                idx = pdf_contents.lower().rindex("reference")
+                pdf_contents = pdf_contents[:idx]
+            except ValueError as e:
+                pass
 
         # TODO: Find all "tokens" which might throw 500 Internal Server Error for GeminiAPICall.
         # removing tokens which raise 500 in Gemini call
