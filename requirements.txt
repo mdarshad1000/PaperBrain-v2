@@ -20,3 +20,6 @@ uvicorn==0.21.1
 ffmpeg-python==0.2.0
 rq==1.16.1
 google-generativeai==0.5.2
+rake-nltk
+cohere
+paperswithcode-client

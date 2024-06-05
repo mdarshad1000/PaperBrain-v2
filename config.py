@@ -21,6 +21,10 @@ CHAT_PROMPT_TEMPLATE = """
     {context}
     </ctx>
     ------
+    <hs>
+    {history}
+    </hs>
+    ------
     Question:
     {question}
     Answer:

@@ -80,7 +80,6 @@ class ArxivManager:
                 pdf_contents = pdf_contents[:idx]
             except ValueError as e:
                 pass
-
         # TODO: Find all "tokens" which might throw 500 Internal Server Error for GeminiAPICall.
         # removing tokens which raise 500 in Gemini call
         special_tokens = ['<eos>', '<bos>', '<pad>', '<EOS>', '<PAD>', '<BOS>']

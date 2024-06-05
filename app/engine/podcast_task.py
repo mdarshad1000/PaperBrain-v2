@@ -16,9 +16,9 @@ from app.engine.audio_processing import (
     )
 from app.engine.chat_utils import (
     prepare_data,
-    ask_questions,
+    # ask_questions,
     embed_and_upsert,
-    create_prompt_template
+    create_prompt_template_podcast
 )
 
 from config import (PODCAST_PROMPT_TEMPLATE, PODCAST_STORAGE_PATH)
@@ -27,7 +27,7 @@ from app.service.pinecone_service import PineconeService
 from app.service.aws_service import S3Manager
 from app.db.db_actions import Action
 
-prompt = create_prompt_template(PODCAST_PROMPT_TEMPLATE)
+prompt = create_prompt_template_podcast(PODCAST_PROMPT_TEMPLATE)
 
 
 s3_manager = S3Manager()
@@ -77,8 +77,8 @@ async def create_podcast(paperurl: str, method: str):
             "What are the main LIMITATIONS of this paper?",
             "What are the main APPLICATION of this paper?",
         ]
-
-        key_insights = [ask_questions(question=message, paper_id=paper_id, prompt=prompt, index=pinecone_service.index) for message in messages]
+        #TODO: Refactor QASessionManager -> Add method for retrieval without memory.
+        # key_insights = [ask_questions(question=message, paper_id=paper_id, prompt=prompt, index=pinecone_service.index) for message in messages]
         logging.info("Relevant info retrieved and Key Findings computed")
     else:
         raise ValueError("Invalid method specified")
