@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from collections import OrderedDict
 from fastapi import APIRouter, Depends
-
+import logging
 from config import ASK_SYSTEM_PROMPT
 from app.service.arxiv_service import ArxivManager
 from app.service.pinecone_service import PineconeService
@@ -15,6 +15,8 @@ from app.engine.askarxiv_utils import process_and_rank_papers, generate_response
 load_dotenv()
 
 askarxiv_router = r = APIRouter()
+
+logging.basicConfig(level=logging.INFO)
 
 class AskArxivRequest(BaseModel):
     question: str
@@ -64,7 +66,6 @@ async def ask_arxiv(
             for paper in reranked_list_of_papers
         ]
     )
-
     response = generate_response(
         openai_client=openai_client,
         query=question,
@@ -72,7 +73,7 @@ async def ask_arxiv(
         formatted_response=formatted_response,
     )
     # Find all citations
-    citations = re.findall(r"\[\d+\.\d+\]", response)
+    citations = re.findall(r"\[(\d{7}|\d+\.\d+)\]", response)
 
     # Create a mapping dictionary
     citation_mapping = {
@@ -80,9 +81,8 @@ async def ask_arxiv(
         for index, citation in enumerate(list(OrderedDict.fromkeys(citations)))
     }
 
-    # Replace citations in the text
     for original, replacement in citation_mapping.items():
-        response = response.replace(original, replacement)
+        response = re.sub(rf"\[{original}\]", replacement, response)
 
     # Create final Citation Mapping using reranked_list_of_papers
     citation_mapping = {
@@ -99,6 +99,9 @@ async def ask_arxiv(
 
     no_of_paper_analysed = len(citation_mapping)
 
+
+    if no_of_paper_analysed == 0:
+        response = "Couldn't gather relevant answers from the papers, however this might be helpful!.\n\n" + response
     # Prepare the final response as a JSON object
     final_response = {
         "response": response,
