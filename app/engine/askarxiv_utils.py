@@ -49,7 +49,7 @@ def process_and_rank_papers(
         unranked_papers.extend([k_paper, s_paper])
 
     reranked_papers = rerank_retrievals(
-        cohere_client, query, docs=[item["title"] for item in unranked_papers], top_N=top_N
+        cohere_client, query=query, docs=[item["title"] + item["summary"] for item in unranked_papers], top_N=top_N
     )
 
     reranked_paper_indices = [item.index for item in reranked_papers]

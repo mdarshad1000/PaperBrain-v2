@@ -151,7 +151,7 @@ ASK_SYSTEM_PROMPT = """
         KEY INSIGHTS
         CONCLUSION
 
-    VERY IMPORTANT NOTE: You should always use the citationId in the answer.     If you cannot find the answer based on the provided context, then make sure to alert the user accordingly.
+    VERY IMPORTANT NOTE: You should always use the citationId in the answer. If you cannot find the answer based on the provided context, then make sure to alert the user accordingly.
     Example:
         The capital of Chile is Santiago de Chile[1234.56789], and the population is 7 million people[2303.00980]. 
 """

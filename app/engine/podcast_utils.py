@@ -1,7 +1,10 @@
+import io
 import os
 import time
-import logging
 import json
+import fitz
+import logging
+import requests
 
 import google.generativeai as genai
 from app.service.openai_service import OpenAIUtils
@@ -12,6 +15,20 @@ from config import (
     GPT_SYSTEM_PROMPT, 
     GPT_USER_PROMPT
 )
+
+def get_podcast_thumbnail(paperurl: str):
+    resp = requests.get(paperurl, stream=True)
+    pdf_bytes = resp.content  # Get the bytes of the PDF directly
+
+    pdf_document = fitz.open(None, pdf_bytes)  # Open the PDF from bytes
+    first_page = pdf_document[0]
+    pix = first_page.get_pixmap()
+    image_bytes = pix.tobytes("png")  # Convert the pixmap to PNG bytes
+
+    # Close the PDF document
+    pdf_document.close()
+
+    return image_bytes
 
 def generate_key_insights(research_paper_text: str):
     genai.configure(api_key=os.getenv('GEMINI_API_KEY_2'))

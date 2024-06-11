@@ -19,7 +19,7 @@ class S3Manager:
         self.bucket_name = os.getenv("S3_BUCKET_NAME")
 
 
-    def get_mp3_url(self, filename: str):
+    def get_url(self, filename: str):
         """Construct a URL for accessing an MP3 file from AWS S3."""
         return {
             "url": f"https://{self.bucket_name}.s3.{os.getenv('AWS_REGION_NAME')}.amazonaws.com/{filename}"
@@ -42,6 +42,14 @@ class S3Manager:
         except Exception as e:
             logging.error(f"Error uploading file: {e}")
 
+    def upload_thumbnail_to_s3(self, paper_id: str, image_bytes: bytes):
+        """Upload a thumbnail image to S3."""
+        self.s3.put_object(
+            Bucket=self.bucket_name,
+            Key=f"{paper_id}.png",
+            Body=image_bytes,
+            ContentType='image/png'
+        )
 
     def get_podcast_list(self):
         """Retrieve list of podcasts from S3 bucket."""

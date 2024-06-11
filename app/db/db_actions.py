@@ -85,9 +85,9 @@ class Action:
         finally:
             self.conn_pool.putconn(conn)
 
-    def update_podcast_information(self, paper_id, title, authors, abstract, transcript, keyinsights, s3_url, status):
-        query = 'UPDATE "Podcast" SET title = %s, authors = %s, abstract = %s, transcript = %s, keyinsights = %s, s3_url = %s, status = %s WHERE paper_id = %s'
-        self.execute_query(query, (title, authors, abstract, transcript, keyinsights, s3_url, status, paper_id))
+    def update_podcast_information(self, paper_id, title, authors, abstract, transcript, keyinsights, s3_url, status, thumbnail):
+        query = 'UPDATE "Podcast" SET title = %s, authors = %s, abstract = %s, transcript = %s, keyinsights = %s, s3_url = %s, status = %s, thumbnail = %s WHERE paper_id = %s'
+        self.execute_query(query, (title, authors, abstract, transcript, keyinsights, s3_url, status, thumbnail, paper_id))
 
     def add_new_podcast(self, paper_id, status):
         query = f'INSERT INTO "Podcast" (paper_id, status) VALUES (%s, %s)'

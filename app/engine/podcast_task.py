@@ -5,7 +5,8 @@ import logging
 
 from app.engine.podcast_utils import (
     generate_key_insights,
-    generate_podcast_script
+    generate_podcast_script,
+    get_podcast_thumbnail
     )
 from app.engine.audio_processing import (
     generate_speech,
@@ -112,13 +113,20 @@ async def create_podcast(paperurl: str, method: str):
     # Export audio
     export_audio(final_audio_w_outro_intro, paper_id)
 
+    # Get Paper Thumbnail
+    image_bytes = get_podcast_thumbnail(paperurl=paperurl)
+
+    # Upload thumbnail to AWS S3
+    s3_manager.upload_thumbnail_to_s3(paper_id=paper_id, image_bytes=image_bytes)
+
     # Upload podcast to AWS S3
     s3_manager.upload_mp3_to_s3(paper_id=paper_id)
 
     # Delete Podcast directory
     shutil.rmtree(podcast_dir)
 
-    new_podcast_url = s3_manager.get_mp3_url(f'{paper_id}.mp3')['url']
+    new_podcast_url = s3_manager.get_url(f'{paper_id}.mp3')['url']
+    thumbnail_url = s3_manager.get_url(f'{paper_id}.png')['url']
 
     database_action.update_podcast_information(
             paper_id=paper_id, 
@@ -128,6 +136,7 @@ async def create_podcast(paperurl: str, method: str):
             transcript=response_dict_json,
             keyinsights=key_insights if method == 'gemini' else 'None',
             s3_url=new_podcast_url,
+            thumbnail=thumbnail_url,
             status='SUCCESS'
         )
     
