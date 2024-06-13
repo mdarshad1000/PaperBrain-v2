@@ -1,4 +1,3 @@
-import io
 import os
 import time
 import json
@@ -58,7 +57,7 @@ def generate_key_insights(research_paper_text: str):
     ])
 
     retry_count = 0
-    while retry_count < 3:
+    while retry_count <= 8:
         try:
             logging.info('Attempt %d to send message', retry_count + 1)
             convo.send_message(
@@ -68,7 +67,7 @@ def generate_key_insights(research_paper_text: str):
             return convo.last.text
         except Exception as e:
             logging.error("Error while sending message: %s", e)
-            time.sleep(3)
+            time.sleep(2 ** retry_count)
         retry_count += 1
 
 
