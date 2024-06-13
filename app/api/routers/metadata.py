@@ -1,4 +1,5 @@
 import os
+import logging
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends
 from paperswithcode import PapersWithCodeClient
@@ -24,7 +25,11 @@ async def read_root(
     paper_id: str,
     client: PapersWithCodeClient = Depends(get_client)
 ):
-    citation_count = get_no_of_citations(paper_id).strip('Cited by')
+    try:
+        citation_count = get_no_of_citations(paper_id).strip('Cited by')
+    except Exception as e:
+        logging.error(e)
+        pass
     repository = get_repo_info(client, paper_id)
     dataset = get_dataset_info(client, paper_id)
     method = get_methods_info(client, paper_id)
