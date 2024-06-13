@@ -28,6 +28,7 @@ async def read_root(
     try:
         citation_count = get_no_of_citations(paper_id).strip('Cited by')
     except Exception as e:
+        citation_count = 'Could not fetch citation count'
         logging.error(e)
         pass
     repository = get_repo_info(client, paper_id)
