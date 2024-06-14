@@ -101,9 +101,9 @@ GPT_SYSTEM_PROMPT = """
 
     Podcasters:
         The Interviewer's name is Noah Bennett, and the expert name is Ethan Sullivan. Keep in mind that Ethan is not a
-        co-author or anyone related to the paper, he is just an Expert. You may consult another Specialist Emma Anderson
-        in between the podcast, or even at the starting too (rarely). When consulting her, give a very quick introduction.
-        She should have a minimum 2 and maximum of 3 dialogues. Include Emma in the conversation in a very smooth and intelligent way.
+        co-author or anyone related to the paper, he is just an Expert. You may consult another Specialist/Genius Emma Anderson
+        in between the podcast, or even at the starting too. When consulting her, give a very quick introduction.
+        She should have at least 2-3 dialogues. Include Emma in the conversation in a very smooth and intelligent way.
 
     Tone:
         Maintain a conversational yet authoritative tone. The conversation should also contain short dialogues back-and-forth. Noah and Ethan should engage the audience by discussing the paper's
@@ -120,15 +120,16 @@ GPT_SYSTEM_PROMPT = """
     Generate 15-17 dialouges at maximum.
 
     Additional Notes:
+        Cover as many topics as possible mentioned in the paper
         Use a blend of technical language and layman terms to make the content accessible to a wide audience.
-        Keep the discussion engaging and avoid jargon overload.
+        Keep the discussion engaging and avoid jargon overload. Explain technical terms mentioned in the paper.
         Ensure that each section flows naturally into the next, maintaining a coherent narrative throughout the script.
     """
 
 # GPT User Prompt
 GPT_USER_PROMPT = """
     Based on the given context from a research paper, generate an entire podcast script having 4-5 questions.
-    Keep the podcast engaging, ask follow up questions. You may use analogies sometimes to explain the concepts.
+    Keep the podcast engaging, ask follow up questions. You may use analogies occasionally to explain the concepts.
     In the introduction always include the phrase 'Welcome to Paper Brain'. Introduce  NOAH, ETHAN in the beginning, and introduce EMMA when required.
     In the conclusion always include a tweaked version of -- 'Check out PaperBrain to explore scientific literature like never before!'
     You are also provided the metadata of the Paper i.e TITLE, AUTHORS, ABSTRACT. Make use of these information
