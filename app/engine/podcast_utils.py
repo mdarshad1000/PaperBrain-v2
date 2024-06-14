@@ -6,6 +6,7 @@ import logging
 import requests
 
 import google.generativeai as genai
+
 from app.service.openai_service import OpenAIUtils
 
 from config import (
@@ -47,40 +48,36 @@ def generate_key_insights(research_paper_text: str):
 
     system_instruction = GEMINI_SYSTEM_INSTRUCTION
 
-    retry_count = 0
-    while retry_count <= 5:
-        try:
-            model = genai.GenerativeModel(
-                model_name="gemini-1.5-pro-latest",
-                generation_config=generation_config,
-                system_instruction=system_instruction,
-                safety_settings=safety_settings,
-            )
-            convo = model.start_chat(history=[])
-            convo.send_message(
-                GEMINI_USER_INSTRUCTION.format(research_paper_text=research_paper_text)
-            )
-            logging.info("Finished generating key insights")
-            return convo.last.text
-        except Exception as e:
-            logging.error("Error while sending message: %s", e)
-            time.sleep(2**retry_count)  # Exponential backoff
-            retry_count += 1
+    models = ["gemini-1.5-pro-latest",  "gemini-1.5-flash"]
 
-    # If all retries failed, try with a different model
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        generation_config=generation_config,
-        system_instruction=system_instruction,
-        safety_settings=safety_settings,
-    )
-    convo = model.start_chat(history=[])
-    convo.send_message(
-        GEMINI_USER_INSTRUCTION.format(research_paper_text=research_paper_text)
-    )
-    logging.info("Finished generating key insights")
-    return convo.last.text
+    for model_name in models:
+        retry_count = 0
+        while retry_count <= 2:
+            try:
+                model = genai.GenerativeModel(
+                    model_name=model_name,
+                    generation_config=generation_config,
+                    system_instruction=system_instruction,
+                    safety_settings=safety_settings,
+                )
+                convo = model.start_chat(history=[])
+                convo.send_message(
+                    GEMINI_USER_INSTRUCTION.format(
+                        research_paper_text=research_paper_text
+                    )
+                )
+                logging.info("Finished generating key insights")
+                key_insight = convo.last.text
+                print("KEY INSIGHTS: ",key_insight)
+                return key_insight
+            except Exception as e:
+                logging.error("Error while sending message: %s", e)
+                wait_time = 20 if model_name == "gemini-1.5-flash" else 3  # Increase wait time for flash model
+                time.sleep(wait_time)
+                retry_count += 1
 
+    logging.error("Failed to generate key insights with all models")
+    return None
 
 def generate_podcast_script(title, abstract, authors, key_findings):
 
