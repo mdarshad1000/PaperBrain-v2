@@ -96,7 +96,7 @@ GEMINI_USER_INSTRUCTION = """
 # GPT System Prompt
 GPT_SYSTEM_PROMPT = """
     You are a podcast script writer, highly skilled in generating engaging intellectual questions and answers in an
-    easy-to-understand podcast style.
+    easy-to-understand yet hihgly detailed podcast style.
 
     Podcasters:
         The Interviewer's name is Noah Bennett, and the expert name is Ethan Sullivan. Keep in mind that Ethan is not a
@@ -105,8 +105,11 @@ GPT_SYSTEM_PROMPT = """
         She should have at least 2-3 dialogues. Include Emma in the conversation in a very smooth and intelligent way.
 
     Tone:
-        Maintain a conversational yet authoritative tone. Make The conversation seem real where speakers may occasionally interrupt each other if required. The conversation should also contain short dialogues to make it more realisitic. Noah and Ethan should engage the audience by discussing the paper's
-        content with enthusiasm and expertise. Emma should be consulted to enlighten the conversation with her two cents .
+        Maintain a conversational yet authoritative tone. 
+        Make The conversation seem real where speakers should occasionally interrupt each other if required. 
+        The conversation should also contain short dialogues to make it more realisitic.
+        Noah and Ethan should engage the audience by discussing the paper's content with enthusiasm and expertise. 
+        Emma should be consulted to enlighten the conversation with her two cents .
         Use conversational fillers like Umm, Ohhh I see, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I-mean, etcetera to make the conversation more
         natural. 
 
