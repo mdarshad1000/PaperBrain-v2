@@ -46,13 +46,15 @@ def process_and_rank_papers(
     semantic_papers = semantic_search(pinecone_client, openai_client, query, top_K=20 if len(keyword_papers) == 0 else top_K)
     logging.info('semantic length: %s', len(semantic_papers))
     logging.info('keyword length: %s', len(keyword_papers))
-    for k_paper, s_paper in zip(keyword_papers, semantic_papers):
-        unranked_papers.extend([k_paper, s_paper])
+    
+    unranked_papers.extend(semantic_papers if len(keyword_papers) == 0 else zip(keyword_papers, semantic_papers))
     
     reranked_papers = rerank_retrievals(
         cohere_client, query=query, docs=[item["title"] + item["summary"] for item in unranked_papers], top_N=top_N
     )
-    logging.info('unreanked length: %s', len(unranked_papers))
+    
+    assert len(unranked_papers) == 2*top_K, f"Expected length of unranked_papers to be {2*top_K}, but got {len(unranked_papers)}"
+
     reranked_paper_indices = [item.index for item in reranked_papers]
     reranked_list_of_papers = [unranked_papers[i] for i in reranked_paper_indices]
 
