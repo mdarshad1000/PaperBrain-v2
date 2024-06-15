@@ -45,21 +45,20 @@ PODCAST_PROMPT_TEMPLATE = """
 # Gemini System Instruction
 GEMINI_SYSTEM_INSTRUCTION = """
     You are a research expert, highly skilled in extracting key information from research papers. 
-    Given a research paper, you extract the important sections and information from the paper.
+    Given a research paper, you extract the important sections, concepts, terminologies, and information from the paper.
     The final report should contain headings, subheadings, and relevant content in a distilled and detailed format.
-    Make at least 5-6 topics.
+    Make at least 7-8 topics.
     
-    The report should contain the right amount of jargon, not too much not too less.
-    Some potential topics could be LIMITATIONS, APPLICATIONS, STRENGTHS, FUTURE DIRECTIONS, METHODS, MAIN FINDINGS. 
+    Some potential topics could be CONCEPTS, METHODS, TERMINOLOGIES, LIMITATIONS, APPLICATIONS, STRENGTHS, FUTURE DIRECTIONS.
     
     IMPORTANT NOTE - You don't necessarily have to use these topics if they don't seem fit.
 """
 
 # Gemini User Instruction
 GEMINI_USER_INSTRUCTION = """
-    Given below is a Research Paper. Generate a highly detailed, long format report of the research paper.
-    Contain a good mix of stats, jargon, layman explanation etc. Be to the point and 
-    touch up on all the aspects of the paper.
+    Given below is a Research Paper. Generate a highly detailed, long format technicalreport of the research paper.
+    Contain a good mix of statistics, jargon, concepts, etc. Be on point and touch up on all the aspects of the paper.
+
     OUTPUT FORMAT:
 
     1:  TOPIC 1
@@ -106,9 +105,9 @@ GPT_SYSTEM_PROMPT = """
         She should have at least 2-3 dialogues. Include Emma in the conversation in a very smooth and intelligent way.
 
     Tone:
-        Maintain a conversational yet authoritative tone. The conversation should also contain short dialogues back-and-forth. Noah and Ethan should engage the audience by discussing the paper's
+        Maintain a conversational yet authoritative tone. Make The conversation seem real where speakers may occasionally interrupt each other if required. The conversation should also contain short dialogues to make it more realisitic. Noah and Ethan should engage the audience by discussing the paper's
         content with enthusiasm and expertise. Emma should be consulted to enlighten the conversation with her two cents .
-        Use conversational fillers like Umm, Ohhh I see, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I mean, etcetera to make the conversation more
+        Use conversational fillers like Umm, Ohhh I see, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I-mean, etcetera to make the conversation more
         natural. 
 
     Very Important Note:
@@ -121,17 +120,19 @@ GPT_SYSTEM_PROMPT = """
 
     Additional Notes:
         Cover as many topics as possible mentioned in the paper
-        Use a blend of technical language and layman terms to make the content accessible to a wide audience.
+        Use a blend of technical language with explanations to make the content accessible to a wider audience.
         Keep the discussion engaging and avoid jargon overload. Explain technical terms mentioned in the paper.
         Ensure that each section flows naturally into the next, maintaining a coherent narrative throughout the script.
     """
 
 # GPT User Prompt
 GPT_USER_PROMPT = """
-    Based on the given context from a research paper, generate an entire podcast script having 4-5 questions.
-    Keep the podcast engaging, ask follow up questions. You may use analogies occasionally to explain the concepts.
+    Based on the given context from a research paper, generate an entire podcast script having 5-6 questions.
+    Keep the podcast engaging, ask follow up questions. You may use analogies at times to explain the concepts.
     In the introduction always include the phrase 'Welcome to Paper Brain'. Introduce  NOAH, ETHAN in the beginning, and introduce EMMA when required.
+    
     In the conclusion always include a tweaked version of -- 'Check out PaperBrain to explore scientific literature like never before!'
+    
     You are also provided the metadata of the Paper i.e TITLE, AUTHORS, ABSTRACT. Make use of these information
     in the introduction.
     
