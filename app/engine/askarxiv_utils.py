@@ -1,3 +1,4 @@
+import logging
 from rake_nltk import Rake
 from typing import List, Dict
 from app.api.routers.semantic_search import create_paper_dict
@@ -41,22 +42,21 @@ def process_and_rank_papers(
 ) -> List[Dict]:
 
     unranked_papers = []
-    for k_paper, s_paper in zip(
-        keyword_search(arxiv_client, query, top_K=top_K),
-        semantic_search(pinecone_client, openai_client, query, top_K=top_K),
-    ):
-
+    keyword_papers = keyword_search(arxiv_client, query, top_K=top_K)
+    semantic_papers = semantic_search(pinecone_client, openai_client, query, top_K=20 if len(keyword_papers) == 0 else top_K)
+    logging.info('semantic length: %s', len(semantic_papers))
+    logging.info('keyword length: %s', len(keyword_papers))
+    for k_paper, s_paper in zip(keyword_papers, semantic_papers):
         unranked_papers.extend([k_paper, s_paper])
-
+    
     reranked_papers = rerank_retrievals(
         cohere_client, query=query, docs=[item["title"] + item["summary"] for item in unranked_papers], top_N=top_N
     )
-
+    logging.info('unreanked length: %s', len(unranked_papers))
     reranked_paper_indices = [item.index for item in reranked_papers]
     reranked_list_of_papers = [unranked_papers[i] for i in reranked_paper_indices]
 
     return reranked_list_of_papers
-
 
 def generate_response(
     openai_client, query: str, system_prompt: str, formatted_response: str
