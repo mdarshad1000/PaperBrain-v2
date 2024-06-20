@@ -134,7 +134,7 @@ GPT_SYSTEM_PROMPT = """
 
 # GPT User Prompt
 GPT_USER_PROMPT = """
-    Based on the given KEY FINDINGS delimited by <key_findings></key_findings> from a research paper, generate an entire podcast script covering all the topics mentioned in the KEY FINDINGS.
+    Based on the given KEY FINDINGS from a research paper, generate an entire podcast script covering all the topics mentioned in the KEY FINDINGS.
     Keep the podcast engaging, ask follow up questions. You may use analogies at times to explain the concepts.
     In the introduction always include the phrase 'Welcome to Paper Brain'. Introduce  NOAH, ETHAN in the beginning, and introduce EMMA when required.
     
@@ -146,9 +146,7 @@ GPT_USER_PROMPT = """
     Generate 19-22 dialouges at maximum.
     Cover as many topics as possible mentioned in the KEY FINDINGS of the paper.
 
-    <key_findings>
     KEY FINDINGS:
-    </key_findings>
     """
 
 ASK_SYSTEM_PROMPT = """
