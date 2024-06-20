@@ -48,7 +48,7 @@ def generate_key_insights(research_paper_text: str):
 
     system_instruction = GEMINI_SYSTEM_INSTRUCTION
 
-    models = ["gemini-1.5-pro-latest",  "gemini-1.5-flash"]
+    models = ["gemini-1.5-pro-latest", "gemini-1.5-flash"]
 
     for model_name in models:
         retry_count = 0

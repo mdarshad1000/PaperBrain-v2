@@ -60,7 +60,9 @@ def process_and_rank_papers(
     reranked_papers = rerank_retrievals(
         cohere_client, query=query, docs=[item["title"] + item["summary"] for item in unranked_papers], top_N=top_N
     )
-    logging.info('unreanked length: %s', len(unranked_papers))
+    
+    logging.info('Unranked length: %s', len(unranked_papers))
+    
     reranked_paper_indices = [item.index for item in reranked_papers]
     reranked_list_of_papers = [unranked_papers[i] for i in reranked_paper_indices]
 
