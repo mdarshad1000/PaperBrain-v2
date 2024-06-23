@@ -9,7 +9,7 @@ from app.service.openai_service import OpenAIUtils
 def generate_speech(response_dict):
     client = OpenAIUtils.get_openai_client()
     for key, text in response_dict.items():
-        voice = "nova" if "EMMA" in key else "onyx" if "ETHAN" in key else "echo"
+        voice = "nova" if key.startswith("EM") else "onyx" if key.startswith("ET") else "echo" if key.startswith("NO") else "shimmer" if key.startswith("OL") else "alloy" if key.startswith("AL") else "fable"
         logging.info(f"Generating speech for {key} with voice {voice}...")
         audio_response = client.audio.speech.create(
             model="tts-1",
@@ -32,13 +32,20 @@ def append_audio_segments(audio_generator):
     return final_audio
 
 
-def overlay_bg_music_on_final_audio(final_audio):
+def overlay_bg_music_on_final_audio(final_audio, style: str=None):
     logging.info("Loading and adjusting background music...")
-    bg_music = AudioSegment.from_mp3(MUSIC_ESSENTIALS + "bg-music-new-2.mp3")
+    if style == "funny":
+        bg_music = AudioSegment.from_mp3(MUSIC_ESSENTIALS + "bg-music-new-2.mp3")
+    else:
+        bg_music = AudioSegment.from_mp3(MUSIC_ESSENTIALS + "bg-music-new-2.mp3")
+    
+    # Calculate how many times the bg_music needs to be repeated
+    repeat_times = len(final_audio) // len(bg_music) + 1
+    bg_music = bg_music * repeat_times
 
     logging.info("Overlaying background music onto the final audio...")
     bg_music = bg_music[:len(final_audio)]
-    bg_music = bg_music - 6  # reduce volume by 6 dB
+    bg_music = bg_music - 9 if style == "funny" else bg_music - 9  # reduce volume by 6 dB
     final_audio = final_audio.overlay(bg_music)
     return final_audio
 
