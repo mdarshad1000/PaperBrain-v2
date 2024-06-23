@@ -85,22 +85,13 @@ class Action:
         finally:
             self.conn_pool.putconn(conn)
 
-    def update_podcast_information(self, paper_id, title, authors, abstract, transcript, keyinsights, s3_url, status, thumbnail):
-        query = 'UPDATE "Podcast" SET title = %s, authors = %s, abstract = %s, transcript = %s, keyinsights = %s, s3_url = %s, status = %s, thumbnail = %s WHERE paper_id = %s'
-        self.execute_query(query, (title, authors, abstract, transcript, keyinsights, s3_url, status, thumbnail, paper_id))
+    def update_podcast_information(self, paper_id, transcript, keyinsights, s3_url, status, thumbnail):
+        query = 'UPDATE "Podcast" SET transcript = %s, keyinsights = %s, s3_url = %s, status = %s, thumbnail = %s WHERE paper_id = %s'
+        self.execute_query(query, (transcript, keyinsights, s3_url, status, thumbnail, paper_id))
 
-    def add_new_podcast(self, paper_id, status):
-        query = f'INSERT INTO "Podcast" (paper_id, status) VALUES (%s, %s)'
-        self.execute_query(query, (paper_id, status))
-
-    def check_user_podcast_relation(self, userId, podcast_id):
-        query = 'SELECT * FROM "UserPodcast" WHERE "userId" = %s AND "podcastId" = %s'
-        result = self.execute_and_fetch(query, (userId, podcast_id))
-        return len(result) > 0
-    
-    def update_user_podcast(self, userId, podcastId):
-        query = 'INSERT INTO "UserPodcast" ("userId", "podcastId") VALUES (%s, %s)'
-        self.execute_query(query, (userId, podcastId))
+    def add_new_podcast(self, paper_id, status, title, authors, abstract):
+        query = f'INSERT INTO "Podcast" (paper_id, status, title, authors, abstract) VALUES (%s, %s, %s, %s, %s)'
+        self.execute_query(query, (paper_id, status, title, authors, abstract))
 
     def get_podcast_info(self, paper_id):
         query = 'SELECT * FROM "Podcast" WHERE paper_id = %s'
@@ -117,6 +108,36 @@ class Action:
         result = self.execute_and_fetch(query, (paper_id, "SUCCESS"))
         return len(result) > 0
 
+    def get_key_insights(self, paper_id):
+        query = 'SELECT * FROM "Podcast" WHERE paper_id LIKE %s'
+        result = self.execute_and_fetch(query, ('%' + paper_id + '%', ))
+        if len(result) > 0:
+            logging.info(f"Key insights found for paper_id: {paper_id}")
+            for item in result:
+                if item['keyinsights'] is not None:
+                    key_insight = item['keyinsights']
+                    return key_insight
+                else:
+                    return None
+        
+    def check_user_podcast_relation(self, userId, podcast_id):
+        query = 'SELECT * FROM "UserPodcast" WHERE "userId" = %s AND "podcastId" = %s'
+        result = self.execute_and_fetch(query, (userId, podcast_id))
+        return len(result) > 0
+    
+    def update_UserPodcast(self, userId, podcastId):
+        query = 'INSERT INTO "UserPodcast" ("userId", "podcastId") VALUES (%s, %s)'
+        self.execute_query(query, (userId, podcastId))
+
+    def check_similar_style_exists(self, userId, podcast_style):
+        query = 'SELECT * FROM "UserPodcast" WHERE "userId" = %s AND "podcastId" like %s'
+        result = self.execute_and_fetch(query, (userId, '%' + podcast_style + '%'))
+        return len(result) > 0
+    
+    def update_speakers(self, userId, intial_speakers, final_speakers):
+        query = 'UPDATE "UserPodcast" SET "podcastId" = %s WHERE "userId" = %s AND "podcastId" like %s'
+        self.execute_query(query, (intial_speakers, userId, '%' + final_speakers + '%'))
+    
     def delete_podcast(self, paper_id):
         query = 'DELETE FROM "Podcast" WHERE paper_id = %s'
         self.execute_query(query, (paper_id,))
@@ -140,7 +161,7 @@ class Action:
                 "summary": result['abstract'],
                 "url": result['s3_url'],
                 "authors": result['authors'],
-                "image": "https://picsum.photos/200/300",  # static image URL
+                "image": "https://picsum.photos/200/300", # static Image URL
             }
             podcasts.append(podcast)
         return podcasts
