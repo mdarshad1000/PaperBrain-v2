@@ -1,7 +1,7 @@
 import logging
 from typing import List
 from fastapi import APIRouter
-
+from pydantic import BaseModel
 from app.db.db_actions import Action
 from app.service.arxiv_service import ArxivManager
 
@@ -26,14 +26,20 @@ def handle_job_failure(job):
     database_action.delete_podcast(paper_id=job_id)
 
 
+class PodcastRequest(BaseModel):
+    paperurl: str
+    userid: str
+    style: str = "moderate"
+    speakers: List[str] = ["Stuart Montgomery", "Emma Anderson", "Ethan Sullivan"]
+    background_music: str = None
+
 @r.post("/podcast")
-async def podcast(
-    paperurl: str,
-    userid: str,
-    style: str = "moderate",
-    speakers: List[str] = ["Stuart Montgomery", "Emma Anderson", "Ethan Sullivan"],
-    background_music: str = None,
-):
+async def podcast(request: PodcastRequest):
+    paperurl = request.paperurl
+    userid = request.userid
+    style = request.style
+    speakers = request.speakers
+    background_music = request.background_music
 
     method = "gemini"  # or "RAG" TODO: Implement better RAG using Grobid + Custom Chunking
 
