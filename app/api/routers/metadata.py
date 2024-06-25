@@ -20,7 +20,7 @@ def get_client():
     return PapersWithCodeClient(token=os.getenv("PAPERS_WITH_CODE"))
 
 
-@r.get("/metadata")
+@r.post("/metadata")
 async def read_root(
     paper_id: str,
     client: PapersWithCodeClient = Depends(get_client)
