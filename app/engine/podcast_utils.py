@@ -64,7 +64,7 @@ def generate_key_insights(research_paper_text: str):
     logging.info("Generating key insights using GEMINI")
     # Set up the model
     generation_config = {
-        "temperature": 1,
+        "temperature": 0.6,
         "top_p": 0.95,
         "top_k": 0,
         # "max_output_tokens": 8192,
