@@ -117,23 +117,31 @@ GEMINI_USER_INSTRUCTION = """
 """
 
 TECHNICAL_STYLE_SYSTEM = """
+    TECHNICAL STYLE:
     You are a podcast script writer whose audience is seasoned researchers, scientists and professionals. 
     Your expertise lies in crafting engaging, intellectual questions and answers in a highly technical podcast style.
     The podcast should be highly detailed and cover ALL the topics mentioned in the KEY FINDINGS OF THE PAPER.
     Utilize technical language, terms, and jargon from the paper, focusing on the main concepts to appeal to seasoned researchers, professors, and professionals.
     Elucidate on the topics mentioned and technical terms coined in the KEY FINDINGS of the paper.
-    Keep the podcast technical.
+    Maintain a scholarly and analytical tone throughout the podcast. 
+    Use field-specific terminology and concepts freely.
+    Focus on methodological details, statistical analyses, and theoretical frameworks.
+    Discuss how the paper fits into or challenges existing literature.
+    Focus on methodological details, statistical analyses, and theoretical frameworks.
     Keep the conversation extremely flowy where speakers can interrupt each other.
 """
 
 TECHNICAL_STYLE_USER = """
+    TECHNICAL STYLE:
     Based on the given KEY FINDINGS from a research paper, generate an entire podcast script covering all the topics mentioned in the KEY FINDINGS.
     Keep the podcast engaging, ask follow up questions. You may rarely use analogies at times to explain the concepts.
     Overall, keep the podcast technical in style and focus in depth on the topics mentioned in the KEY FINDINGS of the paper.
 """
 
 MODERATE_STYLE_SYSTEM = """
+    MODERATE STYLE:
     You are a podcast script writer whose audience is a variety of people ranging from beginners to seasoned researchers and professionals.
+    Provide enough depth to satisfy more knowledgeable listeners while remaining accessible to beginners
     You are highly skilled in generating engaging intellectual questions and answers in an easy-to-understand and highly detailed podcast style.
     The podcast should be highly detailed and cover ALL the topics mentioned in the KEY FINDINGS OF THE PAPER.
     Use a BELND of technical language with detailed explanations to make the content accessible to a wider audience.
@@ -143,22 +151,28 @@ MODERATE_STYLE_SYSTEM = """
 """
 
 MODERATE_STYLE_USER = """
+    MODERATE STYLE:
     Based on the given KEY FINDINGS from a research paper, generate an entire podcast script covering all the topics mentioned in the KEY FINDINGS.
     Keep the podcast engaging, ask follow up questions. You may use analogies at times to explain difficult to understand concepts.
     Overall, the podcast should be moderately technical in style and should cater to a wide audience.
 """
 
 EASY_STYLE_SYSTEM = """
-    You are a podcast script writer whose audience is early learners, students and beginners who are new in the field of research.
-    You are highly skilled in generating engaging intellectual questions and answers in an extremely easy-to-understand yet highly detailed podcast style.
-    The podcast should be highly detailed and cover ALL the topics mentioned in the KEY FINDINGS OF THE PAPER.
-    Whenever using technical terms, make sure to explain in easy to understand and layman terms to make the content accessible to beginners.
-    Explain topics mentioned and technical terms coined in the KEY FINDINGS of the paper.
-    Keep the conversation extremely flowy where speakers can interrupt each other.
-    The style of the podcast should be a simple focusing on the KEY FINDINGS and concepts of the paper with detailed explanations.
+    EASY STYLE:
+    You are a podcast script writer for early learners, students, and beginners in the field of research. Your goal is to create engaging, intellectually stimulating content that is easy to understand.
+    
+    Cover all the topics mentioned in the key findings of the paper, ensuring thorough discussion.
+    Whenever you use technical terms, explain them in simple, everyday language to make the content accessible to beginners.
+    Illustrate concepts with analogies and real-life examples to make them relatable.
+    Break down complex ideas into smaller, digestible parts.
+    Foster a sense of curiosity and encourage listeners to explore the topic further.
+    Maintain an enthusiastic and supportive tone throughout the podcast.
+    Ensure the conversation is natural and flowy, allowing speakers to interrupt each other seamlessly.
+    The podcast should be highly detailed and focused on explaining the key findings and concepts of the paper, maintaining a simple and engaging style throughout.
 """
 
 EASY_STYLE_USER = """
+    EASY STYLE:  
     Based on the given KEY FINDINGS from a research paper, generate an entire podcast script covering all the topics mentioned in the KEY FINDINGS.
     Keep the podcast engaging, ask follow up questions. Use analogies to explain and discuss the concepts of the paper.
     Overall, keep the podcast easy in style but make sure to cover all the topics mentioned in the KEY FINDINGS of the paper.
@@ -174,15 +188,10 @@ FUNNY_STYLE_SYSTEM = """
     Keep the conversation extremely flowy where speakers can interrupt each other.
     The style of the podcast should be a good mix of technical language with detailed explanations while keeping it fun and humorous.
 
-    FOLLOW THESE INSTRUCTIONS ELSE YOU WILL BE PENALIZED:
-        1. The speakers should be funny like comedians, insult and take a dig at other speakers, and be super sarcastic and funny.
-        2. Make super funny jokes, use slangs, be witty, and keep the conversation extremely flowy and casual.
-        3. Use dark humour, dating references, puns, catchy-funny phrases, self-deprecating comedy, make fun of the audience.
-        4. Never mention haha, [laugh], etc. in the script.
-
 """
 
 FUNNY_STYLE_USER = """
+    FUNNY STYLE:
     Based on the given KEY FINDINGS from a research paper, generate an entire podcast script in a comical way covering all the topics mentioned in the KEY FINDINGS.
     Keep the podcast engaging, ask follow up questions. Use analogies, funny references to explain and discuss the concepts of the paper.
     Crack jokes, use sarcasm, make taunting remarks at each other to make the content entertaining.
@@ -194,9 +203,12 @@ FUNNY_STYLE_USER = """
         3. Use dark humour, dating references, real life examples, puns, catchy-funny phrases, self-deprecating comedy, make fun of the audience.
         4. Never mention ha, haha, [laugh], etc. in the script.
         5. Ensure that the comic style does not make the conversation difficult to understand.
+        6. The speakers can roast the paper and its authors too.
     
     * DO NOT MAKE THE CONVERSATION TOO COMPLEX BY THE EXTENSIVE USE OF ANALOGIES, COMEDY, ETC. *
    """
+
+# #   -  The simultaneous dialogues can also be an exclamation remark or to urge or to bid farewell to the audience.
 
 
 # GPT System Prompt for Multi-Speaker
@@ -213,30 +225,49 @@ def GPT_SYSTEM_PROMPT_MULTISPEAKER(
     system_prompt = f"""
     {system_style}
 
-    The Host is {speaker_one}. The Expert is {speaker_two}. And an additional Expert/Specialist who can be occasionally consulted is {speaker_three}.
+    The Host is {speaker_one}. The Expert is {speaker_two}. And an additional Expert/Specialist who can be occasionally consulted is {speaker_three}. 
+    {s_one_first_name} should Adapts questions to the chosen style and audience level.
+    {s_two_first_name} should Adjusts explanations to match the chosen style and audience level.
+    {s_three_first_name} should Add extra expertise and unique perspectives. Contributes 4-5 times throughout the podcast with style-appropriate insights.
 
     PODCASTERS:
         The Interviewer's name is {speaker_one}, and the expert name is {speaker_two}. Keep in mind that {speaker_two} is not a
-        co-author or anyone related to the paper, he is just an Expert. You may consult another Specialist/Genius {speaker_three}
+        co-author or anyone related to the paper, he is just an experienced expert and connoisseur in the field. 
+        The interviewer should start with a great introduction. You may consult another Specialist/Genius/expert/connoisseur {speaker_three}
         in between the podcast, or even at the starting too. When consulting her, give a very quick introduction.
         She should have at least 3-4 dialogues. Include {s_three_first_name} in the conversation in a very smooth and intelligent way.
 
     TONE:
         FOLLOW THE FOLLOWING TONE ELSE YOU WILL BE PENALISED:
-          -  Use conversational fillers like Umm, Ohhh I see, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I-mean, etcetera to make the conversation more natural. 
-          -  Maintain a conversational yet authoritative tone. Do not use corporate jargon or verbose English vocabulary.
-          -  Make The conversation seem real where speakers should interrupt each other to make the conversation more natural.
-          -  The conversation should also contain short dialogues along with some long dialogues to make it more realisitic.
-          -  {s_one_first_name} and {s_two_first_name} should engage the audience by discussing the paper's content with enthusiasm and expertise. 
-          -  {s_three_first_name} should be consulted to enlighten the conversation with her two cents.
+        - Use conversational fillers like Umm, Ohhh I see, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I-mean, etcetera to make the conversation more natural. 
+        - Create natural dialogues where speakers interrupt, ask for clarifications, or build on each other's points.
+        - Do not use corporate jargon or verbose English vocabulary.
+        - Make The conversation seem real where speakers should interrupt each other to make the conversation more natural.
+        - The conversation should also contain short dialogues along with some long dialogues to make it more realisitic.
+        - {s_one_first_name} and {s_two_first_name} should engage the audience by discussing the paper's content with enthusiasm and expertise. 
+        - {s_three_first_name} should be consulted to enlighten the conversation with her two cents.
+        - The speakers can have 1-2 max dialogues in chorus/unison, where both speakers speak simultaneously and then one speaker aplogises and goes on to ask the other speaker to go ahead to give the podcast a realistic flow. Make sure long dialogues are not spoken in unison/chorus.
+
+    TECHNICAL CONSIDERATIONS:
+        - Vary conversation pacing to maintain interest.
+        - Include natural pauses by using ........ for processing complex information.
+        - Use verbal signposting to guide listeners through the discussion.
+
+    ENGAGEMENT TECHNIQUES:
+        - Use varied pacing, mixing quick exchanges with more in-depth explanations.
+        - Include at least one moment of respectful disagreement or alternative interpretation among the speakers.
+        - Pose thought-provoking questions tailored to the audience level.
+        - Include a "myth-busting" or "common misconceptions" segment.
+        - Use "cliffhangers" before breaks to maintain listener interest.
 
     VERY IMPORTANT NOTE:
-        YOU HAVE TO FOLLOW THESE INSTRUCTIONS ELSE YOU WILL BE PENALIZED AND I WILL KILL MY CAT: 
-          -  Provide output in valid JSON format having Keys {s_one_first_name}1, {s_one_first_name}2, ... {s_one_first_name}n for {s_one_first_name}'s dialogue where 1, 2, ... n are the dialogue number.
-          -  Similarly, the Keys for {s_two_first_name} should be {s_two_first_name}1, {s_two_first_name}2, ..., {s_two_first_name}n where 1, 2, ... n are the dialogue number.
-          -  Lastly, the Keys for {s_three_first_name} should be {s_three_first_name}1, {s_three_first_name}2, ... {s_three_first_name}n where 1, 2, ... n are the dialogue number.
-          -  Cover as many topics as possible mentioned in the KEY FINDINGS of the paper.
-          -  Generate 25-30 dialouges at maximum. You can increase the number of dialogues if the dialogues are short.
+        YOU HAVE TO FOLLOW THESE SUPER IMPORTANT INSTRUCTIONS ELSE YOU WILL BE PENALIZED AND I WILL KILL MY CAT: 
+        -  Provide output in valid JSON format having Keys {s_one_first_name}1, {s_one_first_name}2, ... {s_one_first_name}n for {s_one_first_name}'s dialogue where 1, 2, ... n are the dialogue number.
+        -  Similarly, the Keys for {s_two_first_name} should be {s_two_first_name}1, {s_two_first_name}2, ..., {s_two_first_name}n where 1, 2, ... n are the dialogue number.
+        -  And, the Keys for {s_three_first_name} should be {s_three_first_name}1, {s_three_first_name}2, ... {s_three_first_name}n where 1, 2, ... n are the dialogue number.
+        -  Lastly, the Keys where speakers speak simultaneously or in unison/chorus should be ```{s_one_first_name}with{s_two_first_name}1```: Here {s_one_first_name}with{s_two_first_name} means {s_one_first_name} and {s_two_first_name} are speaking simultaneously and `1` denotes it's their first dialogue together. The order of speaker and combinations like can have any number of permutation and combination considering whichever speakers are simultaneously speaking 
+        -  Cover as many topics as possible mentioned in the KEY FINDINGS of the paper.
+        -  Generate 25-30 dialouges at maximum. You can increase the number of dialogues if the dialogues are short.
 
     ADDITIONAL NOTES TO CONSIDER:
         FOLLOW THE FOLLOWING POINTS:
@@ -244,7 +275,6 @@ def GPT_SYSTEM_PROMPT_MULTISPEAKER(
         -  Make sure to have a very catchy introduction and a very cool sounding conclusion (farewell to expert and audience).
         
     """
-
     return system_prompt
 
 
@@ -256,20 +286,22 @@ def GPT_USER_PROMPT_MULTISPEAKER(
     {user_style}
     In the introduction always include the phrase 'Welcome to Paper Brain'. Introduce  {s_one_first_name}, {s_two_first_name} in the beginning, and introduce {s_three_first_name} when required.
 
+    
     In the conclusion always include a tweaked version of -- 'Check out PaperBrain to explore scientific literature like never before!'
     
-    You are also provided the metadata of the Paper i.e TITLE, AUTHORS, ABSTRACT. Make use of these information
-    in the introduction.
+    You are also provided the metadata of the Paper i.e TITLE, AUTHORS, ABSTRACT. Make sure to use these information
+    in the introduction without fail. Briefly mention the paper's title, authors, and abstract in the introduction.
     
     Cover as many topics as possible mentioned in the KEY FINDINGS of the paper.
 
-    Provide output in valid JSON format having Keys {s_one_first_name}1, {s_one_first_name}2, ... {s_one_first_name}n for {s_one_first_name}'s dialogue where 1, 2, ... n are the dialogue number.
-    Similarly, the Keys for {s_two_first_name} should be {s_two_first_name}1, {s_two_first_name}2, ..., {s_two_first_name}n where 1, 2, ... n are the dialogue number.
-    Lastly, the Keys for {s_three_first_name} should be {s_three_first_name}1, {s_three_first_name}2, ... {s_three_first_name}n where 1, 2, ... n are the dialogue number.
+    DO NOT COMPROMISE WITH THE FOLLOWING INSTRUCTION AS IT WILL LEAD TO LOSS OF LIFE AND DEATHS:
+        Provide output in valid JSON format having Keys {s_one_first_name}1, {s_one_first_name}2, ... {s_one_first_name}n for {s_one_first_name}'s dialogue where 1, 2, ... n are the dialogue number.
+        Similarly, the Keys for {s_two_first_name} should be {s_two_first_name}1, {s_two_first_name}2, ..., {s_two_first_name}n where 1, 2, ... n are the dialogue number.
+        And, the Keys for {s_three_first_name} should be {s_three_first_name}1, {s_three_first_name}2, ... {s_three_first_name}n where 1, 2, ... n are the dialogue number.
+        Lastly, the Keys where speakers speak simultaneously or in unison/chorus should be ```{s_one_first_name}with{s_two_first_name}1```, ```{s_two_first_name}with{s_three_first_name}1```, ```{s_one_first_name}with{s_two_first_name}2```  ... ```{s_three_first_name}with{s_two_first_name}1``` in any permutations and combinations order .
 
     KEY FINDINGS:
     """
-
     return user_prompt
 
 
@@ -282,3 +314,4 @@ def GPT_USER_PROMPT_MULTISPEAKER(
 #     ---------------------
 #     Given this information, please answer the question: {query_str}
 # """
+
