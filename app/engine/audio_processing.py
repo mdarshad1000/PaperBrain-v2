@@ -5,22 +5,66 @@ from pydub import AudioSegment
 from config import PODCAST_STORAGE_PATH, MUSIC_ESSENTIALS
 from app.service.openai_service import OpenAIUtils
 
+def get_voice(speaker):
+    if speaker.startswith("EM"):
+        return "nova"
+    elif speaker.startswith("ET"):
+        return "onyx"
+    elif speaker.startswith("NO"):
+        return "echo"
+    elif speaker.startswith("OL"):
+        return "shimmer"
+    elif speaker.startswith("AL"):
+        return "alloy"
+    elif speaker.startswith('ST'):
+        return "fable"
+    else:
+        return None
+
+def overlay_audio_segments(segments):
+    segments.sort(key=len, reverse=True)
+    base_segment = segments[0]
+    for segment in segments[1:]:
+        base_segment = base_segment.overlay(segment)
+    return base_segment
 
 def generate_speech(response_dict):
     client = OpenAIUtils.get_openai_client()
     for key, text in response_dict.items():
-        voice = "nova" if key.startswith("EM") else "onyx" if key.startswith("ET") else "echo" if key.startswith("NO") else "shimmer" if key.startswith("OL") else "alloy" if key.startswith("AL") else "fable"
-        logging.info(f"Generating speech for {key} with voice {voice}...")
-        audio_response = client.audio.speech.create(
-            model="tts-1",
-            voice=voice,
-            input=text,
-        )
-        binary_content = audio_response.read()
-        in_memory_bytes_file = BytesIO(binary_content)
-
-        dialogue_segment = AudioSegment.from_file(in_memory_bytes_file)
-        yield dialogue_segment
+        
+        if 'with' in key:
+            # Handle chorus part
+            speakers = key.split('with')
+            chorus_segments = []
+            for speaker in speakers:
+                voice = get_voice(speaker)
+                logging.info(f"Generating speech for {speaker} with voice {voice}...")
+                audio_response = client.audio.speech.create(
+                    model="tts-1",
+                    voice=voice,
+                    input=text,
+                )
+                binary_content = audio_response.read()
+                in_memory_bytes_file = BytesIO(binary_content)
+                dialogue_segment = AudioSegment.from_file(in_memory_bytes_file)
+                chorus_segments.append(dialogue_segment)
+            
+            # Overlay the audio segments to create the chorus effect
+            chorus_segment = overlay_audio_segments(chorus_segments)
+            yield chorus_segment
+        else:
+            # Handle normal part
+            voice = get_voice(key)
+            logging.info(f"Generating speech for {key} with voice {voice}...")
+            audio_response = client.audio.speech.create(
+                model="tts-1",
+                voice=voice,
+                input=text,
+            )
+            binary_content = audio_response.read()
+            in_memory_bytes_file = BytesIO(binary_content)
+            dialogue_segment = AudioSegment.from_file(in_memory_bytes_file)
+            yield dialogue_segment
 
 
 def append_audio_segments(audio_generator):

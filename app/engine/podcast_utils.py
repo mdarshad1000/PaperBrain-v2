@@ -64,7 +64,7 @@ def generate_key_insights(research_paper_text: str):
     logging.info("Generating key insights using GEMINI")
     # Set up the model
     generation_config = {
-        "temperature": 0.6,
+        "temperature": 1,
         "top_p": 0.95,
         "top_k": 0,
         # "max_output_tokens": 8192,
@@ -100,7 +100,7 @@ def generate_key_insights(research_paper_text: str):
             except Exception as e:
                 logging.error("Error while sending message: %s", e)
                 wait_time = (
-                    40 if model_name == "gemini-1.5-flash" else 3
+                    60 if model_name == "gemini-1.5-flash" else 3
                 )  # Increase wait time for flash model
                 time.sleep(wait_time)
                 retry_count += 1
