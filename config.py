@@ -242,11 +242,11 @@ def GPT_SYSTEM_PROMPT_MULTISPEAKER(
         - Use conversational fillers like Umm, Ohhh I see, Wow, Hmm, Oh, Mmm, Oh-huh, hold on, I-mean, etcetera to make the conversation more natural. 
         - Create natural dialogues where speakers interrupt, ask for clarifications, or build on each other's points.
         - Do not use corporate jargon or verbose English vocabulary.
-        - Make The conversation seem real where speakers should interrupt each other to make the conversation more natural.
         - The conversation should also contain short dialogues along with some long dialogues to make it more realisitic.
         - {s_one_first_name} and {s_two_first_name} should engage the audience by discussing the paper's content with enthusiasm and expertise. 
         - {s_three_first_name} should be consulted to enlighten the conversation with her two cents.
-        - The speakers can have 1-2 max dialogues in chorus/unison, where both speakers speak simultaneously and then one speaker aplogises and goes on to ask the other speaker to go ahead to give the podcast a realistic flow. Make sure long dialogues are not spoken in unison/chorus.
+        - Add a dialogue of in chorus/unison, where both speakers end up speaking simultaneously and then one speaker aplogises and goes on to ask the other speaker to go ahead to give the podcast a realistic flow. Make sure only small phrases are spoken in unison/chorus.
+        - Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement. THIS SHOULD NOT BE INCLUDED AS CHORUS. 
 
     TECHNICAL CONSIDERATIONS:
         - Vary conversation pacing to maintain interest.
@@ -265,9 +265,11 @@ def GPT_SYSTEM_PROMPT_MULTISPEAKER(
         -  Provide output in valid JSON format having Keys {s_one_first_name}1, {s_one_first_name}2, ... {s_one_first_name}n for {s_one_first_name}'s dialogue where 1, 2, ... n are the dialogue number.
         -  Similarly, the Keys for {s_two_first_name} should be {s_two_first_name}1, {s_two_first_name}2, ..., {s_two_first_name}n where 1, 2, ... n are the dialogue number.
         -  And, the Keys for {s_three_first_name} should be {s_three_first_name}1, {s_three_first_name}2, ... {s_three_first_name}n where 1, 2, ... n are the dialogue number.
-        -  Lastly, the Keys where speakers speak simultaneously or in unison/chorus should be ```{s_one_first_name}with{s_two_first_name}1```: Here {s_one_first_name}with{s_two_first_name} means {s_one_first_name} and {s_two_first_name} are speaking simultaneously and `1` denotes it's their first dialogue together. The order of speaker and combinations like can have any number of permutation and combination considering whichever speakers are simultaneously speaking 
+        -  Lastly, the Keys where speakers speak simultaneously or in unison/chorus should be ```{s_one_first_name}with{s_two_first_name}1```: Here {s_one_first_name}with{s_two_first_name} means {s_one_first_name} and {s_two_first_name} are speaking simultaneously in chorus and `1` denotes it's their first dialogue together. The order of speaker and combinations can have any permutation and combination considering whichever speakers are simultaneously speaking.
         -  Cover as many topics as possible mentioned in the KEY FINDINGS of the paper.
         -  Generate 25-30 dialouges at maximum. You can increase the number of dialogues if the dialogues are short.
+        - Add a dialogue of in chorus/unison, where both speakers end up speaking simultaneously and then one speaker aplogises and goes on to ask the other speaker to go ahead to give the podcast a realistic flow. Make sure only small phrases are spoken in unison/chorus.
+        - Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement. THIS SHOULD NOT BE INCLUDED AS CHORUS. 
 
     ADDITIONAL NOTES TO CONSIDER:
         FOLLOW THE FOLLOWING POINTS:
