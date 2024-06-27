@@ -228,7 +228,7 @@ def GPT_SYSTEM_PROMPT_MULTISPEAKER(
     The Host is {speaker_one}. The Expert is {speaker_two}. And an additional Expert/Specialist who can be occasionally consulted is {speaker_three}. 
     {s_one_first_name} should Adapts questions to the chosen style and audience level.
     {s_two_first_name} should Adjusts explanations to match the chosen style and audience level.
-    {s_three_first_name} should Add extra expertise and unique perspectives. Contributes 4-5 times throughout the podcast with style-appropriate insights.
+    {s_three_first_name} should add extra expertise and unique perspectives. Contributes 4-5 times throughout the podcast with style-appropriate insights.
 
     PODCASTERS:
         The Interviewer's name is {speaker_one}, and the expert name is {speaker_two}. Keep in mind that {speaker_two} is not a
@@ -245,13 +245,28 @@ def GPT_SYSTEM_PROMPT_MULTISPEAKER(
         - The conversation should also contain short dialogues along with some long dialogues to make it more realisitic.
         - {s_one_first_name} and {s_two_first_name} should engage the audience by discussing the paper's content with enthusiasm and expertise. 
         - {s_three_first_name} should be consulted to enlighten the conversation with her two cents.
-        - Add a dialogue of in chorus/unison, where both speakers end up speaking simultaneously and then one speaker aplogises and goes on to ask the other speaker to go ahead to give the podcast a realistic flow. Make sure only small phrases are spoken in unison/chorus.
-        - Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement. THIS SHOULD NOT BE INCLUDED AS CHORUS. 
+        - You may Add only one dialogue of chorus/unison, where both speakers end up speaking simultaneously. This would be followed by only one speaker aplogising and going on to ask the other speaker to go ahead to give the podcast a realistic flow. 
+        - Make sure only small phrases (3-5 words) are spoken in unison/chorus. Unlikely phrases shouldn't be spoken in unison/chorus as it will make the conversation scripted. Phrases which humans are naturally expected to say in unison/chorus should be spoken in unison/chorus.
+        - The interrpted dialogues should be 2-3 words long.
+    
+        INTERRUPTION EXAMPLES:
+            Here's how an interruption would look like:
+            Example 1:
+            ...
+            {s_one_first_name}with{s_two_first_name}1: Wow that's actually——
+            {s_two_first_name}3: Oh, sorry {s_one_first_name}, you take it. .
+            {s_one_first_name}2: No worries, I was just marveling at the way you described the paper.
+            ...
 
-    TECHNICAL CONSIDERATIONS:
-        - Vary conversation pacing to maintain interest.
-        - Include natural pauses by using ........ for processing complex information.
-        - Use verbal signposting to guide listeners through the discussion.
+            OR IT COULD BE
+
+            Example 2:
+            ...
+            {s_one_first_name}1: The way in which we——
+            {s_two_first_name}2: Oh, sorry {s_one_first_name}, I was just wondering if I can
+            ...
+            
+        - Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement. THIS SHOULD NOT BE INCLUDED AS CHORUS. 
 
     ENGAGEMENT TECHNIQUES:
         - Use varied pacing, mixing quick exchanges with more in-depth explanations.
@@ -268,14 +283,14 @@ def GPT_SYSTEM_PROMPT_MULTISPEAKER(
         -  Lastly, the Keys where speakers speak simultaneously or in unison/chorus should be ```{s_one_first_name}with{s_two_first_name}1```: Here {s_one_first_name}with{s_two_first_name} means {s_one_first_name} and {s_two_first_name} are speaking simultaneously in chorus and `1` denotes it's their first dialogue together. The order of speaker and combinations can have any permutation and combination considering whichever speakers are simultaneously speaking.
         -  Cover as many topics as possible mentioned in the KEY FINDINGS of the paper.
         -  Generate 25-30 dialouges at maximum. You can increase the number of dialogues if the dialogues are short.
-        - Add a dialogue of in chorus/unison, where both speakers end up speaking simultaneously and then one speaker aplogises and goes on to ask the other speaker to go ahead to give the podcast a realistic flow. Make sure only small phrases are spoken in unison/chorus.
-        - Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement. THIS SHOULD NOT BE INCLUDED AS CHORUS. 
+        -  Add a dialogue of in chorus/unison, where both speakers end up speaking simultaneously reulting in dialogues cut short mid way and then one speaker aplogises and goes on to ask the other speaker to go ahead to give the podcast a realistic flow. Make sure only small phrases are spoken in unison/chorus.
+        -  Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement. THIS SHOULD NOT BE INCLUDED AS CHORUS. 
 
     ADDITIONAL NOTES TO CONSIDER:
         FOLLOW THE FOLLOWING POINTS:
         -  Ensure that each section flows naturally into the next, maintaining a coherent narrative throughout the script.
         -  Make sure to have a very catchy introduction and a very cool sounding conclusion (farewell to expert and audience).
-        
+        -  Never add expressions in the dialogues like (laugh), (encouragingly), etc.
     """
     return system_prompt
 
