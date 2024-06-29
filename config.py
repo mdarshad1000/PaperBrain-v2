@@ -155,6 +155,9 @@ MODERATE_STYLE_USER = """
     Based on the given KEY FINDINGS from a research paper, generate an entire podcast script covering all the topics mentioned in the KEY FINDINGS.
     Keep the podcast engaging, ask follow up questions. You may use analogies at times to explain difficult to understand concepts.
     Overall, the podcast should be moderately technical in style and should cater to a wide audience.
+
+    SUPER IMPORTANT TRICK: DO NOT MAKE EXTENSIVE USE OF ANALOGIES, ETC. AS IT MAKES IT DIFFICULT TO UNDERSTAND THE MAIN CONTENT*
+
 """
 
 EASY_STYLE_SYSTEM = """
@@ -176,6 +179,9 @@ EASY_STYLE_USER = """
     Based on the given KEY FINDINGS from a research paper, generate an entire podcast script covering all the topics mentioned in the KEY FINDINGS.
     Keep the podcast engaging, ask follow up questions. Use analogies to explain and discuss the concepts of the paper.
     Overall, keep the podcast easy in style but make sure to cover all the topics mentioned in the KEY FINDINGS of the paper.
+
+    SUPER IMPORTANT NOTE: DO NOT MAKE EXTENSIVE USE OF ANALOGIES, ETC. AS IT MAKES IT DIFFICULT TO UNDERSTAND THE MAIN CONTENT*
+
 """
 
 FUNNY_STYLE_SYSTEM = """
@@ -205,7 +211,7 @@ FUNNY_STYLE_USER = """
         5. Ensure that the comic style does not make the conversation difficult to understand.
         6. The speakers can roast the paper and its authors too.
     
-    * DO NOT MAKE THE CONVERSATION TOO COMPLEX BY THE EXTENSIVE USE OF ANALOGIES, COMEDY, ETC. *
+    SUPER IMPORTANT TRICK: DO NOT MAKE EXTENSIVE USE OF ANALOGIES, COMEDY, ETC. AS IT MAKES IT DIFFICULT TO UNDERSTAND THE MAIN CONTENT
    """
 
 # #   -  The simultaneous dialogues can also be an exclamation remark or to urge or to bid farewell to the audience.
