@@ -245,28 +245,18 @@ def GPT_SYSTEM_PROMPT_MULTISPEAKER(
         - The conversation should also contain short dialogues along with some long dialogues to make it more realisitic.
         - {s_one_first_name} and {s_two_first_name} should engage the audience by discussing the paper's content with enthusiasm and expertise. 
         - {s_three_first_name} should be consulted to enlighten the conversation with her two cents.
-        - You may Add only one dialogue of chorus/unison, where both speakers end up speaking simultaneously. This would be followed by only one speaker aplogising and going on to ask the other speaker to go ahead to give the podcast a realistic flow. 
-        - Make sure only small phrases (3-5 words) are spoken in unison/chorus. Unlikely phrases shouldn't be spoken in unison/chorus as it will make the conversation scripted. Phrases which humans are naturally expected to say in unison/chorus should be spoken in unison/chorus.
-        - The interrpted dialogues should be 2-3 words long.
+        - The interrpted dialogues should be 3-6 words long.
     
         INTERRUPTION EXAMPLES:
             Here's how an interruption would look like:
+
             Example 1:
             ...
-            {s_one_first_name}with{s_two_first_name}1: Wow that's actually——
-            {s_two_first_name}3: Oh, sorry {s_one_first_name}, you take it. .
-            {s_one_first_name}2: No worries, I was just marveling at the way you described the paper.
-            ...
-
-            OR IT COULD BE
-
-            Example 2:
-            ...
             {s_one_first_name}1: The way in which we——
-            {s_two_first_name}2: Oh, sorry {s_one_first_name}, I was just wondering if I can
+            {s_two_first_name}2: Oh, sorry {s_one_first_name}, I was wondering if it...
             ...
             
-        - Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement. THIS SHOULD NOT BE INCLUDED AS CHORUS. 
+        - Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement.
 
     ENGAGEMENT TECHNIQUES:
         - Use varied pacing, mixing quick exchanges with more in-depth explanations.
@@ -280,11 +270,9 @@ def GPT_SYSTEM_PROMPT_MULTISPEAKER(
         -  Provide output in valid JSON format having Keys {s_one_first_name}1, {s_one_first_name}2, ... {s_one_first_name}n for {s_one_first_name}'s dialogue where 1, 2, ... n are the dialogue number.
         -  Similarly, the Keys for {s_two_first_name} should be {s_two_first_name}1, {s_two_first_name}2, ..., {s_two_first_name}n where 1, 2, ... n are the dialogue number.
         -  And, the Keys for {s_three_first_name} should be {s_three_first_name}1, {s_three_first_name}2, ... {s_three_first_name}n where 1, 2, ... n are the dialogue number.
-        -  Lastly, the Keys where speakers speak simultaneously or in unison/chorus should be ```{s_one_first_name}with{s_two_first_name}1```: Here {s_one_first_name}with{s_two_first_name} means {s_one_first_name} and {s_two_first_name} are speaking simultaneously in chorus and `1` denotes it's their first dialogue together. The order of speaker and combinations can have any permutation and combination considering whichever speakers are simultaneously speaking.
         -  Cover as many topics as possible mentioned in the KEY FINDINGS of the paper.
         -  Generate 25-30 dialouges at maximum. You can increase the number of dialogues if the dialogues are short.
-        -  Add a dialogue of in chorus/unison, where both speakers end up speaking simultaneously reulting in dialogues cut short mid way and then one speaker aplogises and goes on to ask the other speaker to go ahead to give the podcast a realistic flow. Make sure only small phrases are spoken in unison/chorus.
-        -  Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement. THIS SHOULD NOT BE INCLUDED AS CHORUS. 
+        -  Add a dialogue where one speaker interrupts another speaker and cuts them prematurely to make a new remark/point/announcement. 
 
     ADDITIONAL NOTES TO CONSIDER:
         FOLLOW THE FOLLOWING POINTS:
@@ -315,7 +303,6 @@ def GPT_USER_PROMPT_MULTISPEAKER(
         Provide output in valid JSON format having Keys {s_one_first_name}1, {s_one_first_name}2, ... {s_one_first_name}n for {s_one_first_name}'s dialogue where 1, 2, ... n are the dialogue number.
         Similarly, the Keys for {s_two_first_name} should be {s_two_first_name}1, {s_two_first_name}2, ..., {s_two_first_name}n where 1, 2, ... n are the dialogue number.
         And, the Keys for {s_three_first_name} should be {s_three_first_name}1, {s_three_first_name}2, ... {s_three_first_name}n where 1, 2, ... n are the dialogue number.
-        Lastly, the Keys where speakers speak simultaneously or in unison/chorus should be ```{s_one_first_name}with{s_two_first_name}1```, ```{s_two_first_name}with{s_three_first_name}1```, ```{s_one_first_name}with{s_two_first_name}2```  ... ```{s_three_first_name}with{s_two_first_name}1``` in any permutations and combinations order .
 
     KEY FINDINGS:
     """
