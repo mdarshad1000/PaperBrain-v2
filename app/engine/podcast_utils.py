@@ -37,11 +37,13 @@ def get_podcast_thumbnail(paperurl: str, style: str):
     pdf_document = fitz.open(None, pdf_bytes)  # Open the PDF from bytes
     first_page = pdf_document[0]
     pix = first_page.get_pixmap()
-    
+
     # Close the PDF document
     pdf_document.close()
     # Open the main image
-    main_image = Image.open(BytesIO(pix.tobytes("png")))  # Convert the pixmap to PNG bytes
+    main_image = Image.open(
+        BytesIO(pix.tobytes("png"))
+    )  # Convert the pixmap to PNG bytes
 
     # Get the badge image
     badge_image = Image.open(BADGE_PATH)
@@ -53,7 +55,7 @@ def get_podcast_thumbnail(paperurl: str, style: str):
 
     # Convert the modified image back to bytes
     img_byte_arr = BytesIO()
-    main_image.save(img_byte_arr, format='PNG')
+    main_image.save(img_byte_arr, format="PNG")
     img_byte_arr = img_byte_arr.getvalue()
 
     return img_byte_arr
@@ -188,5 +190,6 @@ def generate_podcast_script(
     except json.JSONDecodeError as e:
         logging.error("Failed to decode JSON response from OpenAI: %s", e)
         raise ValueError("Failed to decode JSON response from OpenAI")
-
+    print(response_dict)
     return response_dict
+
