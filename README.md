@@ -2,6 +2,10 @@
 
 PaperBrain is a platform designed to transform your research experience allowing you to explore scientific literature like never before, leveraging the power of AI. It offers a range of features and functionalities that cater to the needs of researchers and researchers-interested individuals.
 
+<p align="center">
+  <img src="static/diagram.jpeg" alt="PaperBrain Diagram"/>
+</p>
+
 ## Features
 
 - **Search**: Two types of searches are available: keyword search and Semantic Search.
