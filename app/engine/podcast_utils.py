@@ -62,13 +62,13 @@ def get_podcast_thumbnail(paperurl: str, style: str):
 
 
 def generate_key_insights(research_paper_text: str):
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY_2"))
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
     logging.info("Generating key insights using GEMINI")
     # Set up the model
     generation_config = {
         "temperature": 0.6,
         "top_p": 0.95,
-        "top_k": 0,
+        # "top_k": 0,
         # "max_output_tokens": 8192,
     }
     safety_settings = [
@@ -77,7 +77,7 @@ def generate_key_insights(research_paper_text: str):
 
     system_instruction = GEMINI_SYSTEM_INSTRUCTION
 
-    models = ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"]
+    models = ["gemini-1.5-pro-002", "gemini-1.5-flash-002"]
 
     for model_name in models:
         retry_count = 0
@@ -102,7 +102,7 @@ def generate_key_insights(research_paper_text: str):
             except Exception as e:
                 logging.error("Error while sending message: %s", e)
                 wait_time = (
-                    60 if model_name == "gemini-1.5-flash" else 3
+                    40 if model_name == "gemini-1.5-flash-002" else 3
                 )  # Increase wait time for flash model
                 time.sleep(wait_time)
                 retry_count += 1
@@ -140,7 +140,7 @@ def generate_podcast_script(
     else:
         raise ValueError("Invalid style provided")
 
-    client = OpenAIUtils.get_openai_client()
+    client = OpenAIUtils.get_async_openai_client()
 
     # Format the input text
     user_prompt = "\n".join(

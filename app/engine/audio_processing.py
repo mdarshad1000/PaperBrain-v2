@@ -32,7 +32,7 @@ def overlay_audio_segments(segments):
 
 
 def generate_speech(response_dict):
-    client = OpenAIUtils.get_openai_client()
+    client = OpenAIUtils.get_async_openai_client()
 
     for key, text in response_dict.items():
         voice = get_voice(key)
@@ -72,7 +72,7 @@ def overlay_bg_music_on_final_audio(final_audio, style: str = None):
     bg_music = bg_music[: len(final_audio)]
     bg_music = (
         bg_music - 9 if style == "funny" else bg_music - 9
-    )  # reduce volume by 6 dB
+    )  # reduce volume by 9 dB
     final_audio = final_audio.overlay(bg_music)
     return final_audio
 

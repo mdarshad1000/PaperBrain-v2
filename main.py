@@ -14,6 +14,7 @@ from app.api.routers.index_paper import index_paper_router
 from app.api.routers.ask_arxiv import askarxiv_router
 from app.api.routers.podcast import podcast_router
 from app.api.routers.chat import chat_router
+from app.api.routers.daily_digest import daily_digest_router
 
 app = FastAPI(docs_url=None)
 
@@ -39,7 +40,7 @@ async def get_swagger_documentation(username: str = Depends(get_current_username
 async def get_redoc_documentation(username: str = Depends(get_current_username)):
     return get_redoc_html(openapi_url="/openapi.json", title="ReDoc")
 
-environment = os.getenv("ENVIRONMENT", "dev") # Default to 'development' if not set
+environment = os.getenv("ENVIRONMENT", "dev")  # Default to 'development' if not set
 
 if environment == "dev":
     logger = logging.getLogger("uvicorn")
@@ -50,25 +51,26 @@ if environment == "dev":
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=[ "X-Experimental-Stream-Data"],
+        expose_headers=["X-Experimental-Stream-Data"],
     )
 else:
     logger = logging.getLogger("uvicorn")
     logger.warning("Running in production mode")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["https://paperbrain.org", "https://paperbrainv2.vercel.app"],  
+        allow_origins=["https://paperbrain.org", "https://paperbrainv2.vercel.app"],
         allow_credentials=True,
         allow_methods=["*"],
         expose_headers=["*"],
     )
 
-app.include_router(semantic_router,) 
-app.include_router(index_paper_router,) 
-app.include_router(podcast_router,) 
-app.include_router(askarxiv_router,) 
-app.include_router(chat_router,) 
+app.include_router(semantic_router,)
+app.include_router(index_paper_router,)
+app.include_router(podcast_router,)
+app.include_router(askarxiv_router,)
+app.include_router(chat_router,)
 app.include_router(metadata_router,)
+app.include_router(daily_digest_router,)
 
 
 if __name__ == "__main__":
@@ -77,3 +79,4 @@ if __name__ == "__main__":
     reload = True if environment == "dev" else False
 
     uvicorn.run(app="main:app", host=app_host, port=app_port, reload=reload)
+

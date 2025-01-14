@@ -24,6 +24,7 @@ class OpenAIUtils:
         )
 
     @staticmethod
-    def get_openai_client():
-        from openai import OpenAI
-        return OpenAI(api_key=OpenAIUtils.OPENAI_API_KEY)
+    def get_async_openai_client():
+        from openai import AsyncOpenAI
+        return AsyncOpenAI(api_key=OpenAIUtils.OPENAI_API_KEY)
+

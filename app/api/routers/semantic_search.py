@@ -8,8 +8,8 @@ from app.service.pinecone_service import PineconeService
 
 semantic_router = r = APIRouter()
 
-def get_openai_client():
-    return OpenAIUtils.get_openai_client()
+def get_async_openai_client():
+    return OpenAIUtils.get_async_openai_client()
 
 class SemanticSearchRequest(BaseModel):
     query: str = Field(..., description="The search query text")
@@ -41,7 +41,7 @@ def get_pinecone_service():
 async def semantic_search(
     request: SemanticSearchRequest,
     pinecone_service=Depends(get_pinecone_service),
-    client=Depends(get_openai_client)
+    client=Depends(get_async_openai_client)
     ):
 
     # calculate query embeddings

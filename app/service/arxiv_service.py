@@ -7,11 +7,9 @@ from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 
-
 class ArxivManager:
 
     def search(self, query=None, list_of_ids=None, max_results=10, sort_by=arxiv.SortCriterion.Relevance):
-
         if list_of_ids:
             search = arxiv.Search(id_list=list_of_ids, max_results=max_results, sort_by=sort_by)
         else:
@@ -27,7 +25,6 @@ class ArxivManager:
                 "pdf_url": result.pdf_url,
                 "date": datetime.strptime(str(result.published), "%Y-%m-%d %H:%M:%S%z").strftime("%B, %Y"),
                 "categories": result.categories,
-                
             }
             for result in results
         ]
@@ -41,8 +38,8 @@ class ArxivManager:
         return f"https://arxiv.org/pdf/{paper_id}"
 
 
-    @classmethod
-    def get_metadata(cls, paper_id):
+    @staticmethod
+    def get_metadata(paper_id):
         paper = arxiv.Search(id_list=[paper_id]).results()
 
         paper_info = [
@@ -52,7 +49,7 @@ class ArxivManager:
                     "ABSTRACT": item.summary,
                 }
             for item in paper
-            ]
+        ]
     
         title = paper_info[0]['TITLE']
         authors = paper_info[0]['AUTHORS']
@@ -60,8 +57,8 @@ class ArxivManager:
 
         return title, authors, abstract
     
-    @classmethod
-    def get_pdf_txt(cls, paperurl: str, exclude_references=True):
+    @staticmethod
+    def get_pdf_txt(paperurl: str, exclude_references=True):
         resp = requests.get(paperurl, stream=True)
         stream = io.BytesIO(resp.content)
 

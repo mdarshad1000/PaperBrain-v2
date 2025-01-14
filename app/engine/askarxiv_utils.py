@@ -4,28 +4,30 @@ from typing import List, Dict
 from app.api.routers.semantic_search import create_paper_dict
 
 
-def refine_query(query: str) -> str:
+async def refine_query(query: str) -> str:
     rake = Rake()
     rake.extract_keywords_from_text(query)
     keywords = rake.get_ranked_phrases()
     return " ".join(keywords)
 
 
-def keyword_search(arxiv_client, query: str, top_K: int) -> List[Dict]:
-    refined_query = refine_query(query)
+async def keyword_search(arxiv_client, query: str, top_K: int) -> List[Dict]:
+    refined_query = await refine_query(query)
     result = arxiv_client.search(query=refined_query, max_results=top_K)
     return result
 
+async def semantic_scholar(query, top_k):
+    # call semantic scholar api
+    return 
 
-def semantic_search(
+async def semantic_search(
     pinecone_client, openai_client, query: str, top_K: int
 ) -> List[Dict]:
-    res = openai_client.embeddings.create(input=query, model="text-embedding-ada-002")
+    res = await openai_client.embeddings.create(input=query, model="text-embedding-ada-002")
     query_vector = res.data[0].embedding
     result = pinecone_client.retrieval(vector=query_vector, k=top_K)
     papers_list = [create_paper_dict(match) for match in result["matches"]]
     return papers_list
-
 
 def rerank_retrievals(cohere_client, query: str, docs: List[str], top_N: int = 10):
     responses = cohere_client.rerank(
@@ -37,14 +39,20 @@ def rerank_retrievals(cohere_client, query: str, docs: List[str], top_N: int = 1
     return responses
 
 
-def process_and_rank_papers(
-    arxiv_client, pinecone_client, openai_client, cohere_client, query: str, top_K: int, top_N: int
+async def process_and_rank_papers(
+    arxiv_client,
+    pinecone_client,
+    openai_client,
+    cohere_client,
+    query: str,
+    top_K: int,
+    top_N: int
 ) -> List[Dict]:
 
-    keyword_papers = keyword_search(arxiv_client, query, top_K=top_K)
+    keyword_papers = await keyword_search(arxiv_client, query, top_K=top_K)
     # keyword_papers.clear()  # Empty the list for Testing
 
-    semantic_papers = semantic_search(pinecone_client, openai_client, query, top_K=20 if len(keyword_papers) == 0 else top_K)
+    semantic_papers = await semantic_search(pinecone_client, openai_client, query, top_K=20 if len(keyword_papers) == 0 else top_K)
     
     logging.info('semantic length: %s', len(semantic_papers))
     logging.info('keyword length: %s', len(keyword_papers))
@@ -68,13 +76,13 @@ def process_and_rank_papers(
 
     return reranked_list_of_papers
 
-def generate_response(
+async def generate_response(
     openai_client, query: str, system_prompt: str, formatted_response: str
 ):
     oai_client = openai_client
 
     # Format the input text
-    completion = oai_client.chat.completions.create(
+    completion = await oai_client.chat.completions.create(
         model="gpt-4o",
         temperature=0.0,
         messages=[

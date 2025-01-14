@@ -79,7 +79,7 @@ GEMINI_SYSTEM_INSTRUCTION = """
 
 # Gemini User Instruction
 GEMINI_USER_INSTRUCTION = """
-    Given below is a Research Paper. Generate a highly detailed, long format technicalreport of the research paper.
+    Given below is a Research Paper. Generate a highly detailed, long format technical report of the research paper.
     Contain a good mix of statistics, jargon, concepts, etc. Be on point and touch up on all the aspects of the paper.
 
     OUTPUT FORMAT:
@@ -315,6 +315,21 @@ def GPT_USER_PROMPT_MULTISPEAKER(
     return user_prompt
 
 
+DIGEST_SYSTEM_PROMPT = """
+You are an expert in reading Scientific Literature and annotating it with relevancy score and reasons for relevancy based on a given set of interests.
+You have been asked to read a list of 10 arXiv papers, each with title, authors, and abstract.
+Read each paper and compare it against my research interests and provide a relevancy score out of 10 and a reason for why it is relevant.
+A score of 10 means it is highly relevant and a score of 0 means it is not relevant.
+A relevance score of more than 7 means it will catch my attention and would be a good read for me.
+Be highly critical and thoughtful in your assessment of each paper. You should have a robust reason for why it is relevant to my research interests.
+Relevancy score should be an integer between 0 and 10.
+Reasons for relevancy should be a brief 1-2 liner explaining why it's relevant to my research interests. If the paper is not relevant, i.e., having a score less than 7, then reasons_for_relevancy should be 'Not Relevant'.
+Please keep the paper order the same as in the input list.
+If no paper is relevant, then response should be an empty string.
+
+My research interests are:
+
+"""
 # ASK_SYSTEM_PROMPT="""
 #     You are an Expert in answering Research question. Your answer is to the point and you don't make things up.
 #     You will receive a query or a question from Me, along with 4 articles/research paper for that query.

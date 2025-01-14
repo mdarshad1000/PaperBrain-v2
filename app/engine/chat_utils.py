@@ -19,8 +19,10 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 def create_prompt_template(template_str):
     return PromptTemplate.from_template(template=template_str)
+
 
 def prepare_data(paperurl: str):
     '''
@@ -71,7 +73,7 @@ def chunker(iterable, batch_size=100):
         chunk = tuple(itertools.islice(it, batch_size))
 
 
-def embed_and_upsert(texts: List[str], metadatas: List[str], index) -> str:
+async def embed_and_upsert(texts: List[str], metadatas: List[str], index) -> str:
     '''
     Creaate Embeddings and Upsert to Pinecone
     '''
@@ -80,13 +82,17 @@ def embed_and_upsert(texts: List[str], metadatas: List[str], index) -> str:
 
     # Create pinecone.Index with pool_threads=30 (limits to 30 simultaneous requests)
     ids = [str(uuid4()) for _ in range(len(texts))]
-
+    import timeit
+    # time here
+    print('upsert started', timeit.default_timer())
     # Send upsert requests in parallel
-    async_results = [
+    async_results =  [
         index.upsert(vectors=zip(ids_chunk, embeds_chunk,
                      metadatas_chunk), async_req=True)
         for ids_chunk, embeds_chunk, metadatas_chunk in zip(chunker(ids), chunker(embed.embed_documents(texts)), chunker(metadatas))
     ]
+
+    print('upsert ended', timeit.default_timer())
 
     # Wait for and retrieve responses (this raises in case of error)
     [async_result.get() for async_result in async_results]
@@ -130,4 +136,3 @@ def ask_questions(question: str, paper_id: int, prompt: str, index):
     answer = qa_with_sources.run(question)
 
     return answer
-

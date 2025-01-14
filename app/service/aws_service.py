@@ -1,23 +1,24 @@
-# s3 service
+# s3 & dynamodb service
 import boto3
 import os
 import logging
 from dotenv import load_dotenv
 from boto3.s3.transfer import TransferConfig
+from typing import Dict, List
 
 
 class S3Manager:
+
     def __init__(self):
         load_dotenv()
         logging.basicConfig(level=logging.INFO)
         self.s3 = boto3.client(
-            's3',
+            "s3",
             aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
             aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-            region_name=os.getenv("AWS_REGION_NAME")
+            region_name=os.getenv("AWS_REGION_NAME"),
         )
         self.bucket_name = os.getenv("S3_BUCKET_NAME")
-
 
     def get_url(self, filename: str):
         """Construct a URL for accessing an MP3 file from AWS S3."""
@@ -25,20 +26,21 @@ class S3Manager:
             "url": f"https://{self.bucket_name}.s3.{os.getenv('AWS_REGION_NAME')}.amazonaws.com/{filename}"
         }
 
-
     def upload_mp3_to_s3(self, paper_id: str):
         """Upload an MP3 file to S3."""
-        local_file_path = f'static/podcast/{paper_id}/{paper_id}.mp3'
+        local_file_path = f"static/podcast/{paper_id}/{paper_id}.mp3"
         if not os.path.exists(local_file_path):
             logging.error(f"File {local_file_path} does not exist.")
             return
 
-        config = TransferConfig(multipart_threshold=1024**2*10)  # 10MB
+        config = TransferConfig(multipart_threshold=1024**2 * 10)  # 10MB
         try:
-            self.s3.upload_file(local_file_path, self.bucket_name,
-                                f"{paper_id}.mp3", Config=config)
+            self.s3.upload_file(
+                local_file_path, self.bucket_name, f"{paper_id}.mp3", Config=config
+            )
             logging.info(
-                f"Successfully uploaded {local_file_path} as {paper_id}.mp3 to bucket {self.bucket_name}")
+                f"Successfully uploaded {local_file_path} as {paper_id}.mp3 to bucket {self.bucket_name}"
+            )
         except Exception as e:
             logging.error(f"Error uploading file: {e}")
 
@@ -48,7 +50,7 @@ class S3Manager:
             Bucket=self.bucket_name,
             Key=f"{paper_id}.png",
             Body=image_bytes,
-            ContentType='image/png'
+            ContentType="image/png",
         )
 
     def get_podcast_list(self):
@@ -58,8 +60,8 @@ class S3Manager:
             files = response.get("Contents", [])
             return [
                 {
-                    'url': f"https://{self.bucket_name}.s3.{os.getenv('AWS_REGION_NAME')}.amazonaws.com/{obj['Key']}",
-                    'filename': obj['Key'].split('/')[-1]
+                    "url": f"https://{self.bucket_name}.s3.{os.getenv('AWS_REGION_NAME')}.amazonaws.com/{obj['Key']}",
+                    "filename": obj["Key"].split("/")[-1],
                 }
                 for obj in files
             ]
@@ -71,6 +73,53 @@ class S3Manager:
         """Check if a podcast exists in S3 bucket."""
         podcast_list = self.get_podcast_list()
         for podcast in podcast_list:
-            if podcast['filename'] == f'{paper_id}.mp3':
-                return True, podcast['url']
+            if podcast["filename"] == f"{paper_id}.mp3":
+                return True, podcast["url"]
         return False, None
+
+
+class DynamoDB:
+    def __init__(self):
+        load_dotenv()
+        logging.basicConfig(level=logging.INFO)
+        self.dynamodb = boto3.resource(
+            "dynamodb",
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            region_name=os.getenv("AWS_REGION_NAME"),
+        )
+        self.table_name = os.getenv("DYNAMODB_TABLE_NAME")
+        self.table = self.dynamodb.Table(self.table_name)
+
+    def add_digest(self, user_id: str, date: str, relevant_papers: List[Dict[str, str]]):
+        try:
+            response = self.table.get_item(Key={"user_id": user_id})
+            item = response.get("Item", None)
+
+            if item:
+                item["dates"][date] = relevant_papers
+            else:
+                item = {
+                    "user_id": user_id,
+                    "dates": {
+                        date: relevant_papers
+                    }
+                }        
+            self.table.put_item(Item=item)
+            return f"Successfully added digest for user {user_id} on {date}"
+        except Exception as e:
+            logging.error(f"Error adding digest: {e}")
+            return f"Error adding digest: {e}"
+
+        
+    def get_digest(self, user_id: str, date: str):
+        try:
+            response = self.table.get_item(Key={"user_id": user_id})
+            item = response.get("Item", None)
+            if item and "dates" in item and date in item["dates"]:
+                return item["dates"][date]
+            else:
+                return None
+            
+        except Exception as e:
+            logging.error(f"Error retrieving digest: {e}")
