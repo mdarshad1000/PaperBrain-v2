@@ -26,6 +26,23 @@ CHAT_PROMPT_TEMPLATE = """
     Answer:
     """
 
+CHAT_PROMPT_TEMPLATE_MANUAL = """
+    You are an expert assistant for question-answering tasks. Use the following pieces of retrieved context (delimited by <ctx></ctx>)
+    to answer the question. 
+    Use 5-6 sentences and keep the answer concise and to the point unless the user asks you to be detailed or if the question requires a lengthy explanation.
+    Be very polite and respectful. Give the answers in points whenever required. Use paragraphs and proper formatting. 
+    Don't return a null response!
+    ------
+    <ctx>
+    {context}
+    </ctx>
+    ------
+    Question:
+    {question}
+    Answer:
+    """
+
+
 # Prompt for Podcast Retrieval
 PODCAST_PROMPT_TEMPLATE = """
     You are an expert assistant for summarising and information extraction. 
