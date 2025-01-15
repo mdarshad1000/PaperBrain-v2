@@ -41,17 +41,17 @@ def get_pinecone_service():
 async def semantic_search(
     request: SemanticSearchRequest,
     pinecone_service=Depends(get_pinecone_service),
-    client=Depends(get_async_openai_client)
+    async_openai_client=Depends(get_async_openai_client)
     ):
 
     # calculate query embeddings
-    response = client.embeddings.create(
+    response = await async_openai_client.embeddings.create(
         input=request.query, model='text-embedding-ada-002')
     query_vector = response.data[0].embedding
 
 
     # perform semantic search over PineconeDB
-    query_response = pinecone_service.retrieval(
+    query_response = await pinecone_service.retrieval(
         vector=query_vector, k=20, categories=request.categories, year=request.year)
     
     papers_list = [create_paper_dict(match)

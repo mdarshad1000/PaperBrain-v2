@@ -140,7 +140,7 @@ def generate_podcast_script(
     else:
         raise ValueError("Invalid style provided")
 
-    client = OpenAIUtils.get_async_openai_client()
+    async_openai_client = OpenAIUtils.get_async_openai_client()
 
     # Format the input text
     user_prompt = "\n".join(
@@ -160,7 +160,7 @@ def generate_podcast_script(
 
     try:
         logging.info("Sending request to OpenAI...")
-        completion = client.chat.completions.create(
+        completion = async_openai_client.chat.completions.create(
             model="gpt-4-1106-preview",
             response_format={"type": "json_object"},
             messages=[

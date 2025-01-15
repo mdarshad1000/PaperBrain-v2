@@ -21,11 +21,11 @@ async def semantic_scholar(query, top_k):
     return 
 
 async def semantic_search(
-    pinecone_client, openai_client, query: str, top_K: int
+    pinecone_client, async_openai_client, query: str, top_K: int
 ) -> List[Dict]:
-    res = await openai_client.embeddings.create(input=query, model="text-embedding-ada-002")
+    res = await async_openai_client.embeddings.create(input=query, model="text-embedding-ada-002")
     query_vector = res.data[0].embedding
-    result = pinecone_client.retrieval(vector=query_vector, k=top_K)
+    result = await pinecone_client.retrieval(vector=query_vector, k=top_K)
     papers_list = [create_paper_dict(match) for match in result["matches"]]
     return papers_list
 
@@ -42,7 +42,7 @@ def rerank_retrievals(cohere_client, query: str, docs: List[str], top_N: int = 1
 async def process_and_rank_papers(
     arxiv_client,
     pinecone_client,
-    openai_client,
+    async_openai_client,
     cohere_client,
     query: str,
     top_K: int,
@@ -52,7 +52,7 @@ async def process_and_rank_papers(
     keyword_papers = await keyword_search(arxiv_client, query, top_K=top_K)
     # keyword_papers.clear()  # Empty the list for Testing
 
-    semantic_papers = await semantic_search(pinecone_client, openai_client, query, top_K=20 if len(keyword_papers) == 0 else top_K)
+    semantic_papers = await semantic_search(pinecone_client, async_openai_client, query, top_K=20 if len(keyword_papers) == 0 else top_K)
     
     logging.info('semantic length: %s', len(semantic_papers))
     logging.info('keyword length: %s', len(keyword_papers))
@@ -77,12 +77,12 @@ async def process_and_rank_papers(
     return reranked_list_of_papers
 
 async def generate_response(
-    openai_client, query: str, system_prompt: str, formatted_response: str
+    async_openai_client, query: str, system_prompt: str, formatted_response: str
 ):
-    oai_client = openai_client
+    async_openai_client = async_openai_client
 
     # Format the input text
-    completion = await oai_client.chat.completions.create(
+    completion = await async_openai_client.chat.completions.create(
         model="gpt-4o",
         temperature=0.0,
         messages=[
