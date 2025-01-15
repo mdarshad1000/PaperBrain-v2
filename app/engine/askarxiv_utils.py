@@ -93,3 +93,20 @@ async def generate_response(
     )
     response = completion.choices[0].message.content
     return response
+
+
+async def generate_response_agentic(
+    agentic_client, query: str, system_prompt: str, formatted_response: str
+):
+    logging.info("Generating response using agentic")
+    # Format the input text
+    completion = await agentic_client.chat.completions.create(
+        model="agentic-turbo",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": query + '\n\n' + str(formatted_response)},
+        ]
+    )
+    response = completion.choices[0].message.content
+    logging.info(f"Response successfully generated!")
+    return response

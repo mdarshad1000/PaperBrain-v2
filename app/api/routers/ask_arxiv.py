@@ -12,7 +12,7 @@ from config import ASK_SYSTEM_PROMPT
 from app.service.arxiv_service import ArxivManager
 from app.service.pinecone_service import PineconeService
 from app.service.openai_service import OpenAIUtils
-from app.engine.askarxiv_utils import process_and_rank_papers, generate_response
+from app.engine.askarxiv_utils import process_and_rank_papers, generate_response, generate_response_agentic
 
 load_dotenv()
 
@@ -39,15 +39,18 @@ def get_async_openai_client():
 def get_cohere_client():
     return cohere.Client(os.getenv("COHERE_API_KEY"))
 
+def get_agentic_client():
+    return OpenAIUtils.agentic_client()
+
 @r.post("/ask-arxiv")
 async def ask_arxiv(
     question: str = None,
     arxiv_client: ArxivManager = Depends(get_arxiv_manager),
     pinecone_client: PineconeService = Depends(get_pinecone_service),
     async_openai_client: OpenAIUtils = Depends(get_async_openai_client),
+    agentic_client: OpenAIUtils = Depends(get_agentic_client),
     cohere_client: cohere.Client = Depends(get_cohere_client),
 ):
-    print('-x-x-x-x-x-x-xx-x-x-x-x-x-x GOT A REQUEST HUEHUE -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x')
     if question is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No question provided")
 
@@ -70,13 +73,20 @@ async def ask_arxiv(
             for paper in reranked_list_of_papers
         ]
     )
-    response = await generate_response(
-        async_openai_client=async_openai_client,
+    # using openai
+    # response = await generate_response(
+    #     async_openai_client=async_openai_client,
+    #     query=question,
+    #     system_prompt=ASK_SYSTEM_PROMPT,
+    #     formatted_response=formatted_response,
+    # )
+    # using agentic
+    response = await generate_response_agentic(
+        agentic_client=agentic_client,
         query=question,
         system_prompt=ASK_SYSTEM_PROMPT,
         formatted_response=formatted_response,
     )
-
     # Find all citations
     citations = re.findall(r"\[(\d{7}|\d+\.\d+)\]", response)
 
