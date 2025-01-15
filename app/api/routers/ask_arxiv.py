@@ -44,7 +44,7 @@ async def ask_arxiv(
     question: str = None,
     arxiv_client: ArxivManager = Depends(get_arxiv_manager),
     pinecone_client: PineconeService = Depends(get_pinecone_service),
-    openai_client: OpenAIUtils = Depends(get_async_openai_client),
+    async_openai_client: OpenAIUtils = Depends(get_async_openai_client),
     cohere_client: cohere.Client = Depends(get_cohere_client),
 ):
     print('-x-x-x-x-x-x-xx-x-x-x-x-x-x GOT A REQUEST HUEHUE -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x')
@@ -57,7 +57,7 @@ async def ask_arxiv(
     reranked_list_of_papers = await process_and_rank_papers(
         arxiv_client=arxiv_client,
         pinecone_client=pinecone_client,
-        openai_client=openai_client,
+        async_openai_client=async_openai_client,
         cohere_client=cohere_client,
         query=question,
         top_K=top_K,
@@ -71,7 +71,7 @@ async def ask_arxiv(
         ]
     )
     response = await generate_response(
-        openai_client=openai_client,
+        async_openai_client=async_openai_client,
         query=question,
         system_prompt=ASK_SYSTEM_PROMPT,
         formatted_response=formatted_response,
