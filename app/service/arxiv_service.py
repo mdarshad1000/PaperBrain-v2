@@ -2,8 +2,10 @@ import io
 import arxiv
 import fitz
 import logging
-import requests
+import asyncio
+import aiohttp
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,7 +41,7 @@ class ArxivManager:
 
 
     @staticmethod
-    def get_metadata(paper_id):
+    async def get_metadata(paper_id):
         paper = arxiv.Search(id_list=[paper_id]).results()
 
         paper_info = [
@@ -58,31 +60,51 @@ class ArxivManager:
         return title, authors, abstract
     
     @staticmethod
-    def get_pdf_txt(paperurl: str, exclude_references=True):
-        resp = requests.get(paperurl, stream=True)
-        stream = io.BytesIO(resp.content)
+    async def get_pdf_txt(paperurl: str, exclude_references=True):
+        """
+        Fully asynchronous PDF processing pipeline
+        """
+        async def process_pdf_text(pdf_contents: str) -> str:
+            """Process PDF text asynchronously"""
+            if exclude_references:
+                ref_index = pdf_contents.lower().rfind("reference")
+                if ref_index != -1:
+                    pdf_contents = pdf_contents[:ref_index]
 
-        page_txts = []
-        with fitz.Document(stream=stream) as pdf:
-            for page in pdf.pages():
-                txt = page.get_text()
-                page_txts.append(txt)
+            special_tokens = ['<eos>', '<bos>', '<pad>', '<EOS>', '<PAD>', '<BOS>']
+            for token in special_tokens:
+                pdf_contents = pdf_contents.replace(token, '(' + token.strip('<>').lower() + ')')
+            return pdf_contents
+
+        stream = io.BytesIO()
         
-        pdf_contents = "".join(page_txts)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(paperurl) as resp:
+                if resp.status == 200:
+                    async for chunk in resp.content.iter_chunked(8192):
+                        stream.write(chunk)
+                else:
+                    raise Exception(f"Failed to download PDF, status code: {resp.status}")
+        
+        stream.seek(0)
 
-        if exclude_references:
-            # find last occurrence of 'references' in case the paper content mentions it before the heading
-            try:
-                idx = pdf_contents.lower().rindex("reference")
-                pdf_contents = pdf_contents[:idx]
-            except ValueError as e:
-                pass
-        # TODO: Find all "tokens" which might throw 500 Internal Server Error for GeminiAPICall.
-        # removing tokens which raise 500 in Gemini call
-        special_tokens = ['<eos>', '<bos>', '<pad>', '<EOS>', '<PAD>', '<BOS>']
-        for token in special_tokens:
-            pdf_contents = pdf_contents.replace(
-                token, '(' + token.strip('<>').lower() + ')')
+
+        # Create a ThreadPoolExecutor for PDF processing
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as pool:
+            # Run PDF text extraction in thread pool
+            raw_text = await loop.run_in_executor(pool, lambda: ArxivManager._extract_text_concurrently(stream))
+            # Process the text asynchronously
+            pdf_contents = await process_pdf_text(raw_text)
+
             
         return pdf_contents
-    
+
+    @staticmethod
+    def _extract_text_concurrently(stream):
+        """
+        Extracts text from the PDF using threads for each page's text extraction.
+        """
+        with fitz.Document(stream=stream) as pdf:
+            data = "".join([page.get_text() for page in pdf.pages()])
+            return data
