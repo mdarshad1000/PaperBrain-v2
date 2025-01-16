@@ -26,7 +26,7 @@ def get_pinecone_service():
 async def process_and_index_paper(paperurl: str, pinecone_service):
     paper_id = ArxivManager.id_from_url(paperurl=paperurl)
 
-    if await pinecone_service.check_paper_exists(paper_id=paper_id):
+    if pinecone_service.check_paper_exists(paper_id=paper_id):
         logging.info(f"Paper ID {paper_id} is already indexed.")
         return
         
