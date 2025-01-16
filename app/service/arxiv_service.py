@@ -4,6 +4,7 @@ import fitz
 import logging
 import asyncio
 import aiohttp
+import requests
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
@@ -58,7 +59,7 @@ class ArxivManager:
         abstract = paper_info[0]['ABSTRACT']
 
         return title, authors, abstract
-    
+        
     @staticmethod
     async def get_pdf_txt(paperurl: str, exclude_references=True):
         """
@@ -108,3 +109,32 @@ class ArxivManager:
         with fitz.Document(stream=stream) as pdf:
             data = "".join([page.get_text() for page in pdf.pages()])
             return data
+
+    @staticmethod
+    def get_pdf_txt_sync(paperurl: str, exclude_references=True):
+        resp = requests.get(paperurl, stream=True)
+        stream = io.BytesIO(resp.content)
+
+        page_txts = []
+        with fitz.Document(stream=stream) as pdf:
+            for page in pdf.pages():
+                txt = page.get_text()
+                page_txts.append(txt)
+        
+        pdf_contents = "".join(page_txts)
+
+        if exclude_references:
+            # find last occurrence of 'references' in case the paper content mentions it before the heading
+            try:
+                idx = pdf_contents.lower().rindex("reference")
+                pdf_contents = pdf_contents[:idx]
+            except ValueError as e:
+                pass
+        # TODO: Find all "tokens" which might throw 500 Internal Server Error for GeminiAPICall.
+        # removing tokens which raise 500 in Gemini call
+        special_tokens = ['<eos>', '<bos>', '<pad>', '<EOS>', '<PAD>', '<BOS>']
+        for token in special_tokens:
+            pdf_contents = pdf_contents.replace(
+                token, '(' + token.strip('<>').lower() + ')')
+            
+        return pdf_contents
