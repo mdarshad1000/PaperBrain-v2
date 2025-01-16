@@ -27,7 +27,7 @@ def get_async_openai_client():
     return OpenAIUtils.get_async_openai_client()
 
 def get_agentic_client():
-    return OpenAIUtils.agentic_client()
+    return OpenAIUtils.get_agentic_client()
 
 @r.post("/explain-new")
 async def explain_question(

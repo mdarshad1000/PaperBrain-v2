@@ -40,7 +40,7 @@ def get_cohere_client():
     return cohere.Client(os.getenv("COHERE_API_KEY"))
 
 def get_agentic_client():
-    return OpenAIUtils.agentic_client()
+    return OpenAIUtils.get_agentic_client()
 
 @r.post("/ask-arxiv")
 async def ask_arxiv(
