@@ -140,7 +140,7 @@ def generate_podcast_script(
     else:
         raise ValueError("Invalid style provided")
 
-    async_openai_client = OpenAIUtils.get_async_openai_client()
+    sync_agentic_client = OpenAIUtils.get_agentic_client_sync()
 
     # Format the input text
     user_prompt = "\n".join(
@@ -159,9 +159,9 @@ def generate_podcast_script(
     )
 
     try:
-        logging.info("Sending request to OpenAI...")
-        completion = async_openai_client.chat.completions.create(
-            model="gpt-4-1106-preview",
+        logging.info("Sending request to AgenticAI...")
+        completion = sync_agentic_client.chat.completions.create(
+            model="agentic-turbo",
             response_format={"type": "json_object"},
             messages=[
                 {
@@ -190,6 +190,5 @@ def generate_podcast_script(
     except json.JSONDecodeError as e:
         logging.error("Failed to decode JSON response from OpenAI: %s", e)
         raise ValueError("Failed to decode JSON response from OpenAI")
-    print(response_dict)
     return response_dict
 

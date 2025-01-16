@@ -43,6 +43,7 @@ pinecone_service = PineconeService(
     environment=os.getenv("PINECONE_ENVIRONMENT_2"),
 )
 
+
 @celery_app.task(queue="podcastq")
 def create_podcast(
     userid: str,
@@ -67,12 +68,14 @@ def create_podcast(
         speaker_three = speakers[2].upper()
 
     paper_id = arxiv_manager.id_from_url(paperurl)
+    print('-x-x--x-x-x--x-x-x--x-x-x-got the paper_id-c-x-x-x-x-x-x-x-x-x-x-x-x-x--x-x-x-x--x-x--x-x-x-x', paper_id)
     thumbnail_style = paper_id + "-" + style
     paper_id = (paper_id + "-" + style + "-" + "-".join(speakers)).replace(" ", "-")
 
     if method == "gemini":
         # convert pdf to text
-        research_paper_text = arxiv_manager.get_pdf_txt(paperurl)
+        print('arshaddd', paperurl)
+        research_paper_text = arxiv_manager.get_pdf_txt_sync(paperurl)
         key_insights = database_action.get_key_insights(paper_id=paper_id.split("-")[0])
 
         if key_insights is None:
@@ -85,38 +88,42 @@ def create_podcast(
                 research_paper_text=research_paper_text
             )
 
-    elif method == "rag":
-        # Check if a namespace exists in Pinecone with this paper ID
-        flag = pinecone_service.check_paper_exists(paper_id=paper_id)
-        logging.info(f"Bool if paper already indexed {flag}")
+    # FIX: RAG method is not accurate & async prepare_data function -> sync for celery task
+    # elif method == "rag":
+    #     # Check if a namespace exists in Pinecone with this paper ID
+    #     flag = pinecone_service.check_paper_exists(paper_id=paper_id)
+    #     logging.info(f"Bool if paper already indexed {flag}")
 
-        if not flag:
-            logging.info("Paper not Indexed: Indexing Now ->")
-            # Split PDF into chunks
-            texts, metadatas = prepare_data(paperurl=paperurl)
-            logging.info("chunked %s", paper_id)
-            # Create embeddings and upsert to Pinecone
-            embed_and_upsert(
-                texts=texts, metadatas=metadatas, index=pinecone_service.index
-            )
+    #     if not flag:
+    #         logging.info("Paper not Indexed: Indexing Now ->")
+    #         # Split PDF into chunks
+    #         print(' getting executed')
 
-        messages = [
-            "What are the main FINDINGS of this paper?",
-            "What are the METHODS used in this paper?",
-            "What are the main STRENGTHS of this paper?",
-            "What are the main LIMITATIONS of this paper?",
-            "What are the main APPLICATION of this paper?",
-        ]
-        key_insights = [
-            ask_questions(
-                question=message,
-                paper_id=paper_id,
-                prompt=prompt,
-                index=pinecone_service.index,
-            )
-            for message in messages
-        ]
-        logging.info("Relevant info retrieved and Key Findings computed")
+    #         texts, metadatas = await prepare_data(paperurl=paperurl)
+    #         print('never getting executed')
+    #         logging.info("chunked %s", paper_id)
+    #         # Create embeddings and upsert to Pinecone
+    #         embed_and_upsert(
+    #             texts=texts, metadatas=metadatas, index=pinecone_service.index
+    #         )
+
+    #     messages = [
+    #         "What are the main FINDINGS of this paper?",
+    #         "What are the METHODS used in this paper?",
+    #         "What are the main STRENGTHS of this paper?",
+    #         "What are the main LIMITATIONS of this paper?",
+    #         "What are the main APPLICATION of this paper?",
+    #     ]
+    #     key_insights = [
+    #         ask_questions(
+    #             question=message,
+    #             paper_id=paper_id,
+    #             prompt=prompt,
+    #             index=pinecone_service.index,
+    #         )
+    #         for message in messages
+    #     ]
+    #     logging.info("Relevant info retrieved and Key Findings computed")
     else:
         raise ValueError("Invalid method specified")
 

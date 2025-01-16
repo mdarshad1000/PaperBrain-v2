@@ -36,12 +36,11 @@ async def podcast(request: PodcastRequest):
     method = "gemini"  # or "RAG" TODO: Implement better RAG using Grobid + Custom Chunking
 
     paper_id = arxiv_manager.id_from_url(paperurl)
-    print('dfhadsjkfhjkadshfkjlhasdjkhfkjlasdhkjfhasdkjfhkjasdhfkljahsdhkl',paper_id)
 
     # Get title, authors, abstract
     title, authors, abstract = None, None, None
     try:
-        title, authors, abstract = arxiv_manager.get_metadata(paper_id=paper_id)
+        title, authors, abstract = await arxiv_manager.get_metadata(paper_id=paper_id)
     except Exception as e:
         raise e
 
