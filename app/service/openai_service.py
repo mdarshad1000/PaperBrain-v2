@@ -35,12 +35,27 @@ class OpenAIUtils:
         from openai import AsyncOpenAI
 
         return AsyncOpenAI(api_key=OpenAIUtils.OPENAI_API_KEY)
-
+    
     @staticmethod
-    def agentic_client():
-        from openai import OpenAI, AsyncOpenAI
+    def get_sync_openai_client():
+        from openai import OpenAI
+
+        return OpenAI(api_key=OpenAIUtils.OPENAI_API_KEY)
+    
+    @staticmethod
+    def get_agentic_client():
+        from openai import AsyncOpenAI
 
         return AsyncOpenAI(
+            base_url=os.getenv("AGENTIC_BASE_URL"),
+            api_key=os.getenv("AGENTIC_API_KEY")
+        )
+
+    @staticmethod
+    def get_agentic_client_sync():
+        from openai import OpenAI
+
+        return OpenAI(
             base_url=os.getenv("AGENTIC_BASE_URL"),
             api_key=os.getenv("AGENTIC_API_KEY")
         )
