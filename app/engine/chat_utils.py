@@ -127,7 +127,6 @@ async def ask_questions_agentic(
             for i, match in enumerate(retrieved_chunks["matches"])
         ]
     )
-    print(formatted_chunks)
     # Generate Response from OpenAI
     answer = await agentic_client.chat.completions.create(
         model="agentic-turbo",
@@ -145,8 +144,7 @@ async def ask_questions_agentic(
         ],
     )
     
-    return answer
-    return answer.choices[0].message.content
+    return answer.choices[0].message.content # Optionally return the Source too
 
 
 async def ask_questions(question: str, paper_id: int, prompt: str, index):

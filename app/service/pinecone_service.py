@@ -52,7 +52,7 @@ class PineconeService:
         )
         return query_response
 
-    async def check_paper_exists(self, paper_id: str) -> bool:
+    def check_paper_exists(self, paper_id: str) -> bool:
         response = self.index.query(
             top_k=1,
             include_metadata=True,
