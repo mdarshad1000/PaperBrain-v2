@@ -32,12 +32,12 @@ def overlay_audio_segments(segments):
 
 
 def generate_speech(response_dict):
-    async_openai_client = OpenAIUtils.get_async_openai_client()
+    sync_openai_client = OpenAIUtils.get_sync_openai_client()
 
     for key, text in response_dict.items():
         voice = get_voice(key)
         logging.info(f"Generating speech for {key} with voice {voice}...")
-        audio_response = async_openai_client.audio.speech.create(
+        audio_response = sync_openai_client.audio.speech.create(
             model="tts-1",
             voice=voice,
             input=text,
