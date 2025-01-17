@@ -120,19 +120,14 @@ async def generate_response_agentic(
             {"role": "system", "content": system_prompt},
             {
                 "role": "user",
-                "content": 
-                
-                
-"""Following is the User Query with the List of Papers. 
-Use the format [citationId] between sentences. Use the exact same [citationId] present in the Research Paper Data provided below.
-                
-Your Final answer should be in a well formatted Markdown format and alway contain the following sections:
-    INTRODUCTION -- contains the introduction to the answer.
-    KEY INSIGHTS -- Should be elaborate, ideally in bullet points and can contain subheadings.
-    CONCLUSION -- contains a nice conclusion.       
-"""
+                "content":"""Following is the User Question with the List of Papers" 
+                    Use the format [citationId] between sentences. Use the exact same [citationId] present in the Research Paper Data provided below for answering the question.   
+                    """
+                + "\n\n"
+                + "QUESTION:\n"
                 + query
                 + "\n\n"
+                + "List Of Papers:\n"
                 + str(formatted_response),
             },
         ],
