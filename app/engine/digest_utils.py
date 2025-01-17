@@ -60,7 +60,7 @@ def fetch_papers(categories: List[str], date: str) -> Generator[Dict[str, str], 
                 "title": title,
                 "authors": authors,
                 "abstract": abstract,
-                # "categories": categories, # You can uncomment if you need categories
+                # "categories": categories, # uncomment if you need categories
             }
             scraped_papers.append(paper_data)
             yield paper_data
@@ -84,9 +84,9 @@ class RelevantPapersResponse(BaseModel):
 
 # Function to generate relevance score for a list of papers
 def generate_relevance_score(interests: str, papers: str):
-    sync_agentic_client = OpenAIUtils.get_agentic_client_sync()
-    completion = sync_agentic_client.beta.chat.completions.parse(
-        model="agentic-turbo",
+    sync_openai_client = OpenAIUtils.get_sync_openai_client()
+    completion = sync_openai_client.beta.chat.completions.parse(
+        model="gpt-4o-2024-08-06",
         messages=[
             {
                 "role": "system",
