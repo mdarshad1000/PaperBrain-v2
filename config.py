@@ -77,6 +77,7 @@ Your Final answer should be in a well formatted Markdown format and alway contai
 
 VERY IMPORTANT NOTE: 
     - The citationId should always be in [] brackets. Do not use any other identifier or format. Example [1234.56789]
+    - If there are multiple citationIds, then always do it like this [1234.56789][2345.6789]
     - Make sure there are always and only 3 Main Headings (Introduction, Key Insights, Conclusion) in the output.
     - Keep the Markdown format correct or you will be heavily penalized.
     - Utilize as many research papers as possible to enhance the quality and depth of the output. 
@@ -86,9 +87,9 @@ VERY IMPORTANT NOTE:
 
 Example:
     The capital of Chile is Santiago de Chile[1234.56789], and the population is 7 million people[2303.00980].
-    The capital of Chile is Santiago de Chile and the population is 7 million people[2303.00980][1234.56789].
 
-    NOTE: Prefer using the first example format for referencing ([citationId] after each phrase). The second format may be used occasionally, but it is not recommended as a standard practice."""
+    VERY IMPORTANT EXAMPLE NOTE: NEVER put two citations together after a sentence.
+"""
 
 # Gemini System Instruction
 GEMINI_SYSTEM_INSTRUCTION = """
