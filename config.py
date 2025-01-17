@@ -83,7 +83,6 @@ ASK_SYSTEM_PROMPT = """
         
     Example:
         The capital of Chile is Santiago de Chile[1234.56789], and the population is 7 million people[2303.00980].
-        Cats are known for their agility and independence and they are often kept as pets[2303.00980][1234.56789].
 """
 
 # Gemini System Instruction
