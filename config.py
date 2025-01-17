@@ -76,6 +76,7 @@ Your Final answer should be in a well formatted Markdown format with the followi
     CONCLUSION -- contains a nice conclusion.
 
 VERY IMPORTANT NOTE: 
+    - The citationId should always be in [] brackets. Do not use any other identifier or format. Example [1234.56789]
     - Make sure there are only 3 Main Headings (Introduction, Key Insights, Conclusion) in the output.
     - Keep the Markdown format correct or you will be heavily penalized.
     - Utilize as many research papers as possible to enhance the quality and depth of the output. 
