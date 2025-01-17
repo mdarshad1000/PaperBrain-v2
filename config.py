@@ -71,9 +71,9 @@ ASK_SYSTEM_PROMPT = """
     Make use of the relevant information for answering. Do not start you answer with 'Based on the given context' or similar phrases.
 
     Your Final answer should be in a Markdown format with the following sections:
-        INTRODUCTION
-        KEY INSIGHTS
-        CONCLUSION
+        INTRODUCTION -- contains the introduction to the answer.
+        KEY INSIGHTS -- Should be elaborate, ideally in bullet points and can contain subheadings.
+        CONCLUSION -- contains a nice conclusion.
 
     VERY IMPORTANT NOTE: 
         Utilize as many research papers as possible to enhance the quality and depth of the output. 
