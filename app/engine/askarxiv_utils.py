@@ -101,7 +101,7 @@ async def generate_response_agentic(
     logging.info("Generating response using agentic")
     # Format the input text
     completion = await agentic_client.chat.completions.create(
-        model="agentic-turbo",
+        model="agentic-ultra",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": "QUERY\n" + query + '\n\n' + "PAPERS:\n" + str(formatted_response)},
