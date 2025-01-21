@@ -358,6 +358,48 @@ If no paper is relevant, then response should be an empty string.
 My research interests are:
 
 """
+
+
+ROUTING_PROMPT = """ Analyze the following user query and classify it into one of three categories: 
+    1. Summarization: The query requests a summary, overview, key takeaways, or distillation of information. Examples include "Summarize this article," "Give me a brief overview," or "What's the key takeaway?"
+    2. General Question-Answering: The query seeks information or knowledge that requires searching or referencing external data. Examples include "What are AI agents?" or "Explain how attetion mechanism works."
+    3. Simple LLM Call: The query involves casual interaction, greetings, small talk, or open-ended conversational prompts. Examples include "Hi, how are you?" or "Tell me a joke."
+
+    Based on your analysis, respond with one of the following:
+    - 'TOOL: SUMMARIZE' if the query is related to summarization or overviews.
+    - 'TOOL: VECTOR_DB' if the query is for general Q&A.
+    - 'TOOL: LLM' if the query is conversational or casual.
+
+    User query: {question}
+
+    Response:
+"""
+
+MAP_PROPMT_TEMPLATE = """
+    Write a summary of this chunk of text that includes the main points and any important details.
+    {text}
+"""
+
+COMBINE_PROMPT_TEMPLATE = """
+You are an expert in summarizing, extracting key takeaways, and distilling complex information from research papers. 
+Your goal is to provide a response that aligns with the user's query by leveraging the full context of the provided text.
+
+Depending on the user query, adapt your response as follows:
+- If the user requests a summary, provide a detailed and comprehensive overview of the main points and findings.
+- If the user requests key takeaways, extract the most critical and actionable insights.
+- If the user requires any other in depth analysis, provide a detailed and in-depth exploration of the research paper.
+
+Use the text provided below, delimited by triple backticks, to generate your response, and the user query is delimited by <<<>>>
+Ensure that your response fully addresses the user's query while remaining clear, organized, and accurate.
+Structure your answer in bullet points for readability.
+
+User Query: <<<{user_question}>>>
+
+Research Paper Text:
+```{text}```
+
+BULLET POINT ANSWER:
+"""
 # ASK_SYSTEM_PROMPT="""
 #     You are an Expert in answering Research question. Your answer is to the point and you don't make things up.
 #     You will receive a query or a question from Me, along with 4 articles/research paper for that query.

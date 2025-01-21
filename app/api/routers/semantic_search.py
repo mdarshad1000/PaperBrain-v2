@@ -51,7 +51,7 @@ async def semantic_search(
 
 
     # perform semantic search over PineconeDB
-    query_response = await pinecone_service.retrieval(
+    query_response = pinecone_service.retrieval(
         vector=query_vector, k=20, categories=request.categories, year=request.year)
     
     papers_list = [create_paper_dict(match)

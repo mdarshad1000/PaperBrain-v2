@@ -1,11 +1,13 @@
 import itertools
 import logging
+import os
 
 from dotenv import load_dotenv
 from uuid import uuid4
 from typing import List
 
 from langchain.chains import RetrievalQA
+from langchain.chains.summarize import load_summarize_chain
 from langchain.prompts import PromptTemplate
 from langchain_pinecone import PineconeVectorStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -20,9 +22,11 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+# def create_prompt_template(template_str):
+#     return PromptTemplate.from_template(template=template_str)
 
-def create_prompt_template(template_str):
-    return PromptTemplate.from_template(template=template_str)
+def create_prompt_template(template_str: str, input_variables=["text"]):
+    return PromptTemplate(template=template_str, input_variables=input_variables)
 
 
 async def prepare_data(paperurl: str):
@@ -99,7 +103,51 @@ async def embed_and_upsert(texts: List[str], metadatas: List[str], index) -> str
     return "Embedded the Arxiv Paper"
 
 
-async def ask_questions_agentic(
+async def semantic_router(question: str, routing_prompt: str, groq_client):
+    """
+    Routes the query to either summarization, general Q&A, or a vanilla LLM call based on query analysis.
+    """
+
+    response = groq_client.chat.completions.create(
+        model="llama3-70b-8192",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a routing assistant. Determine if the query requires summarization/fetching key takeaways or General Q&A or simple LLM call.",
+            },
+            {"role": "user", "content": routing_prompt.format(question=question)},
+        ],
+        max_completion_tokens=20,
+    )
+    routing_decision = response.choices[0].message.content.strip()
+
+    if "TOOL: SUMMARIZE" in routing_decision:
+        return "summarize"
+    elif "TOOL: VECTOR_DB" in routing_decision:
+        return "vector_db"
+    else:
+        return "general"
+
+
+async def summarize_tool(paper_text: str, map_prompt, combine_prompt, llm_client):
+
+    map_reduce_chain = load_summarize_chain(
+        llm=llm_client,
+        chain_type="map_reduce",
+        map_prompt=map_prompt,
+        combine_prompt=combine_prompt,
+        return_intermediate_steps=True,
+    )
+    map_reduce_outputs = map_reduce_chain({"input_documents": paper_text})
+    return map_reduce_outputs
+
+
+
+async def general_tool(question: str, async_agentic_client):
+    pass
+
+
+async def vector_db_tool(
     question: str,
     paper_id: int,
     prompt: str,
@@ -117,7 +165,7 @@ async def ask_questions_agentic(
     )
 
     query_vector = response.data[0].embedding
-    retrieved_chunks = await pinecone_service.retrieval(
+    retrieved_chunks = pinecone_service.retrieval(
         vector=query_vector, k=top_k, filter_params={"paper_id": {"$eq": paper_id}}
     )
 
@@ -143,41 +191,42 @@ async def ask_questions_agentic(
             },
         ],
     )
-    
-    return answer.choices[0].message.content # Optionally return the Source too
+
+    return answer.choices[0].message.content  # Optionally return the Source too
 
 
-async def ask_questions(question: str, paper_id: int, prompt: str, index):
-    """
-    Retrieve Context and Generate Answers using LangChain
-    """
-    text_field = "text"
-    # Create an embedding object
-    embeddings = OpenAIUtils.get_embeddings_api()
+# OBSOLETE: Replaced with custom Retrieval + Generation logic above
+# async def ask_questions(question: str, paper_id: int, prompt: str, index):
+#     """
+#     Retrieve Context and Generate Answers using LangChain
+#     """
+#     text_field = "text"
+#     # Create an embedding object
+#     embeddings = OpenAIUtils.get_embeddings_api()
 
-    vectorstore = PineconeVectorStore(
-        index=index,
-        embedding=embeddings,
-        text_key=text_field,
-    )
+#     vectorstore = PineconeVectorStore(
+#         index=index,
+#         embedding=embeddings,
+#         text_key=text_field,
+#     )
 
-    llm = OpenAIUtils.get_chat_api(
-        model_name="gpt-3.5-turbo-16k",
-        temperature=0.0,
-        streaming=True,
-        callbacks=[StreamingStdOutCallbackHandler()],
-    )
+#     llm = OpenAIUtils.get_chat_api(
+#         model_name="gpt-3.5-turbo-16k",
+#         temperature=0.0,
+#         streaming=True,
+#         callbacks=[StreamingStdOutCallbackHandler()],
+#     )
 
-    qa_with_sources = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vectorstore.as_retriever(
-            search_kwargs={"k": 4, "filter": {"paper_id": {"$eq": paper_id}}}
-        ),
-        chain_type_kwargs={
-            "prompt": prompt,
-            "verbose": True,
-        },
-    )
-    answer = qa_with_sources.run(question)
-    return answer
+#     qa_with_sources = RetrievalQA.from_chain_type(
+#         llm=llm,
+#         chain_type="stuff",
+#         retriever=vectorstore.as_retriever(
+#             search_kwargs={"k": 4, "filter": {"paper_id": {"$eq": paper_id}}}
+#         ),
+#         chain_type_kwargs={
+#             "prompt": prompt,
+#             "verbose": True,
+#         },
+#     )
+#     answer = qa_with_sources.run(question)
+#     return answer

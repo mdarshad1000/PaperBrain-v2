@@ -25,7 +25,7 @@ async def semantic_search(
 ) -> List[Dict]:
     res = await async_openai_client.embeddings.create(input=query, model="text-embedding-ada-002")
     query_vector = res.data[0].embedding
-    result = await pinecone_client.retrieval(vector=query_vector, k=top_K)
+    result = pinecone_client.retrieval(vector=query_vector, k=top_K)
     papers_list = [create_paper_dict(match) for match in result["matches"]]
     return papers_list
 

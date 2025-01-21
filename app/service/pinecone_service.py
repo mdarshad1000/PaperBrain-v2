@@ -38,7 +38,7 @@ class PineconeService:
         return self._index
     
 
-    async def retrieval(self, vector, k, categories=None, year=None, filter_params=None):
+    def retrieval(self, vector, k, categories=None, year=None, filter_params=None):
         if categories:
             filter_params['categories'] = {'$in': categories.split()}
         if year:
